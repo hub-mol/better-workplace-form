@@ -105,6 +105,10 @@ const STEP_REQUIRED = {
   3: [],
 };
 
+// true  = Next nieaktywny dopóki wszystkie wymagane pola nie przejdą walidacji (live)
+// false = walidacja tylko po kliknięciu Next (poprzednie zachowanie)
+const STRICT_NAV = true;
+
 // ─── phone ───────────────────────────────────────────────────────────────────
 
 // fixed: true = group subscriber digits in 3s; false = just separate CC from number
@@ -266,19 +270,39 @@ function extractUtm(url) {
   }
 }
 
+// ─── progress ────────────────────────────────────────────────────────────────
+
+// zwraca CSS width string: "X%", "0.675rem" (current + empty), lub "0"
+function calcStepProgress(stepNum, currentStep, data, agreemrkChecked, done) {
+  if (done) return "100%";
+  const valid = (f) => {
+    const v = String(data[f] ?? "").trim();
+    return v.length > 0 && validateField(f, v) === null;
+  };
+  let n = 0;
+  let mul = 25;
+  if (stepNum === 1) n = ["first_name", "last_name", "email", "phone"].filter(valid).length;
+  else if (stepNum === 2) n = ["tax_number", "company_name", "city", "company_workers"].filter(valid).length;
+  else if (stepNum === 3) { n = (String(data.f_message ?? "").trim() ? 1 : 0) + (agreemrkChecked ? 1 : 0); mul = 50; }
+  if (n > 0) return n * mul + "%";
+  if (stepNum === currentStep) return "0.675rem"; // current, nic nie wypełnione — mały wskaźnik
+  return "0";                                     // past bez pól (edge) lub future
+}
+
 // ─── components ──────────────────────────────────────────────────────────────
 
-function StepIndicator({ current }) {
+function LoadingBar({ width }) {
   return html`
-    <div class="form-stepper" role="progressbar" aria-valuenow=${current} aria-valuemin="1" aria-valuemax="3">
-      ${STEPS.map(
-        (step) => html`
-          <div
-            key=${step.id}
-            class=${"form-stepper_pill" + (step.id < current ? " is-done" : step.id === current ? " is-active" : "")}
-          ></div>
-        `,
-      )}
+    <div class="form-loader">
+      <div class="form-loader_fill" style=${{ width }}></div>
+    </div>
+  `;
+}
+
+function StepIndicator({ widths }) {
+  return html`
+    <div class="form-stepper">
+      ${widths.map((w, i) => html`<${LoadingBar} key=${i} width=${w} />`)}
     </div>
   `;
 }
@@ -535,6 +559,8 @@ function App() {
   const [nipLoading, setNipLoading] = useState(false);
   const [nipError, setNipError] = useState("");
   const [nipFilled, setNipFilled] = useState(false);
+  const [agreemrkChecked, setAgreemrkChecked] = useState(false);
+  const [done, setDone] = useState(false);
 
   // Get parent page URL and brand — via postMessage when in iframe, directly otherwise
   useEffect(() => {
@@ -573,6 +599,15 @@ function App() {
     return () => obs.disconnect();
   }, []);
 
+  // Śledź stan checkboxa agreemrk (kontrolowanego przez Webflow.js)
+  useEffect(() => {
+    if (step !== 3) return;
+    const el = document.querySelector('input[name="agreemrk"]');
+    if (!el) return;
+    const handler = (e) => setAgreemrkChecked(e.target.checked);
+    el.addEventListener("change", handler);
+    return () => el.removeEventListener("change", handler);
+  }, [step]);
 
   const onChange = useCallback((field, value) => {
     let v = value;
@@ -632,17 +667,31 @@ function App() {
     (e) => {
       if (data.website) { e.preventDefault(); return; } // honeypot — cicha blokada
       log("submit", data);
-      setStatus("submitting"); // Webflow.js przejmuje submit; my tylko oznaczamy stan
+      // Po submicie czekamy aż Webflow.js pokaże .w-form-done → done = true → 100%
+      const wrapper = document.getElementById("form-component");
+      if (wrapper) {
+        const obs = new MutationObserver(() => {
+          const successDiv = wrapper.querySelector(".w-form-done");
+          if (successDiv?.style.display === "block") { setDone(true); obs.disconnect(); }
+        });
+        obs.observe(wrapper, { attributes: true, subtree: true, attributeFilter: ["style"] });
+      }
     },
     [data],
   );
 
-  const currentStepHasErrors = (STEP_REQUIRED[step] || []).some((f) => errors[f]);
+  const canProceed = STRICT_NAV
+    ? (STEP_REQUIRED[step] || []).every((f) => {
+        const v = String(data[f] ?? "").trim();
+        return v.length > 0 && validateField(f, v) === null;
+      })
+    : !(STEP_REQUIRED[step] || []).some((f) => errors[f]);
+  const stepWidths = [1, 2, 3].map((s) => calcStepProgress(s, step, data, agreemrkChecked, done));
 
   return html`
-    <div class="padding-xs">
+    <div class="padding-xs grid-1">
       <div id="form-component" class="form_component w-form">
-        <${StepIndicator} current=${step} />
+        <${StepIndicator} widths=${stepWidths} />
 
         <form
           id="zapytanie"
@@ -696,13 +745,13 @@ function App() {
             <div class="form-nav_right">
               ${step < 3 &&
               html`
-                <button type="button" class=${"button" + (currentStepHasErrors ? " is-inactive" : "")} onClick=${goNext}>
+                <button type="button" class=${"button" + (!canProceed ? " is-inactive" : "")} onClick=${goNext}>
                   ${COPY.buttons.next}
                 </button>
               `}
               ${step === 3 &&
               html`
-                <button type="submit" class=${"button" + (currentStepHasErrors ? " is-inactive" : "")}>${COPY.buttons.submit}</button>
+                <button type="submit" class="button">${COPY.buttons.submit}</button>
               `}
             </div>
           </div>
