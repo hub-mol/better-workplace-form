@@ -2,6 +2,9 @@
 
 import { html, render, useState, useEffect, useCallback } from "https://unpkg.com/htm/preact/standalone.module.js";
 
+const DEBUG = new URL(import.meta.url).searchParams.has('debug');
+const log = (...args) => DEBUG && console.log('[bwp]', ...args);
+
 // Only business emails allowed
 const PERSONAL_EMAIL_DOMAINS = [
   "gmail.com",
@@ -248,6 +251,21 @@ function extractBrand(url) {
   }
 }
 
+function extractUtm(url) {
+  try {
+    const p = new URL(url).searchParams;
+    return {
+      utm_source:   p.get("utm_source")   || "",
+      utm_medium:   p.get("utm_medium")   || "",
+      utm_campaign: p.get("utm_campaign") || "",
+      gclid:        p.get("gclid")        || "",
+      fbclid:       p.get("fbclid")       || "",
+    };
+  } catch {
+    return { utm_source: "", utm_medium: "", utm_campaign: "", gclid: "", fbclid: "" };
+  }
+}
+
 // ─── components ──────────────────────────────────────────────────────────────
 
 function StepIndicator({ current }) {
@@ -269,7 +287,7 @@ function Field({ id, label, required, error, noIcon, children }) {
   return html`
     <div class="form_field-wrapper">
       <label for=${id} class="form_field-label">
-        ${required && html`<span class="form_required" aria-hidden="true">*</span>`} ${label}
+        ${label}${required && html`<span class="form_required" aria-hidden="true">*</span>`}
       </label>
       ${children}
       ${!noIcon &&
@@ -466,9 +484,7 @@ function Step3({ data, onChange }) {
           placeholder=${COPY.placeholders.f_message}
           class="form_input is-text-area w-input"
           onInput=${(e) => onChange("f_message", e.target.value)}
-        >
-${data.f_message}</textarea
-        >
+        >${data.f_message}</textarea>
       </div>
       <label class="w-checkbox form_checkbox">
         <div class="w-checkbox-input w-checkbox-input--inputType-custom form_checkbox-icon"></div>
@@ -507,6 +523,12 @@ function App() {
     agreemrk: false,
     url: "",
     brand: "",
+    referrer:     "",
+    utm_source:   "",
+    utm_medium:   "",
+    utm_campaign: "",
+    gclid:        "",
+    fbclid:       "",
   });
   const [errors, setErrors] = useState({});
   const [step3Key, setStep3Key] = useState(0);
@@ -518,15 +540,22 @@ function App() {
   useEffect(() => {
     if (window === window.parent) {
       const href = window.location.href;
-      setData((prev) => ({ ...prev, url: href, brand: extractBrand(href) }));
+      const utm = extractUtm(href);
+      log('standalone mode', { url: href, brand: extractBrand(href), ...utm });
+      setData((prev) => ({ ...prev, url: href, brand: extractBrand(href), referrer: document.referrer, ...utm }));
       return;
     }
     const handler = (e) => {
       if (e.data?.type !== "bwp:info") return;
+      log('postMessage received', e.data);
+      const utm = e.data.url ? extractUtm(e.data.url) : {};
       setData((prev) => ({
         ...prev,
-        ...(e.data.url ? { url: e.data.url } : {}),
-        ...(e.data.brand ? { brand: e.data.brand } : e.data.url ? { brand: extractBrand(e.data.url) } : {}),
+        ...(e.data.url     ? { url:      e.data.url }            : {}),
+        ...(e.data.brand   ? { brand:    e.data.brand }
+                           : e.data.url ? { brand: extractBrand(e.data.url) } : {}),
+        ...(e.data.referrer ? { referrer: e.data.referrer }       : {}),
+        ...utm,
       }));
     };
     window.addEventListener("message", handler);
@@ -605,9 +634,10 @@ function App() {
 
   const handleSubmit = useCallback(
     (e) => {
-      if (data.website) e.preventDefault(); // honeypot — cicha blokada
+      if (data.website) { e.preventDefault(); return; } // honeypot — cicha blokada
+      log('submit', data);
     },
-    [data.website],
+    [data],
   );
 
   const currentStepHasErrors = (STEP_REQUIRED[step] || []).some((f) => errors[f]);
@@ -652,7 +682,13 @@ function App() {
               <input type="hidden" name="company_name" value=${data.company_name} />
               <input type="hidden" name="city" value=${data.city} />
               <input type="hidden" name="company_workers" value=${data.company_workers} />
-              <input type="hidden" name="department" value=${data.department} />
+              <input type="hidden" name="department"   value=${data.department} />
+              <input type="hidden" name="referrer"     value=${data.referrer} />
+              <input type="hidden" name="utm_source"   value=${data.utm_source} />
+              <input type="hidden" name="utm_medium"   value=${data.utm_medium} />
+              <input type="hidden" name="utm_campaign" value=${data.utm_campaign} />
+              <input type="hidden" name="gclid"        value=${data.gclid} />
+              <input type="hidden" name="fbclid"       value=${data.fbclid} />
             </div>
           `}
 

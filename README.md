@@ -39,6 +39,7 @@ On any page where you want the form, paste:
       e.source.postMessage({
         type: 'bwp:info',
         url: window.location.href,
+        referrer: document.referrer,
         brand: BRAND
       }, '*');
     }
@@ -54,7 +55,7 @@ On any page where you want the form, paste:
 | Message | Direction | Payload |
 |---------|-----------|---------|
 | `bwp:request-info` | iframe → parent | — |
-| `bwp:info` | parent → iframe | `{ url, brand? }` |
+| `bwp:info` | parent → iframe | `{ url, brand?, referrer? }` |
 | `bwp:resize` | iframe → parent | `{ height }` |
 
 The iframe sends `bwp:request-info` on mount. The parent responds with `bwp:info` containing the current page URL. `brand` is optional — if omitted, it's extracted automatically from the hostname.
