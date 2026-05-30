@@ -805,8 +805,17 @@ function App() {
   `;
 }
 
-// <p class="form_checkbox-label" style="display:none">
-//   <span class="form_required">*</span>pola wymagane
-// </p>
+export function initForm() {
+  const el = document.getElementById("app");
+  if (!el) return;
+  render(html`<${App} />`, el);
+}
 
-render(html`<${App} />`, document.getElementById("app"));
+export function destroyForm() {
+  const el = document.getElementById("app");
+  if (!el) return;
+  render(null, el);
+}
+
+initForm();
+
