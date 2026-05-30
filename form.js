@@ -535,7 +535,7 @@ function Step3({ data, onChange }) {
 
 // ─── app ─────────────────────────────────────────────────────────────────────
 
-function App() {
+function App({ noTabs = false }) {
   const [step, setStep] = useState(1);
   const [data, setData] = useState({
     first_name: "",
@@ -605,13 +605,13 @@ function App() {
 
   // Śledź stan checkboxa agreemrk (kontrolowanego przez Webflow.js)
   useEffect(() => {
-    if (step !== 3) return;
+    if (!noTabs && step !== 3) return;
     const el = document.querySelector('input[name="agreemrk"]');
     if (!el) return;
     const handler = (e) => setAgreemrkChecked(e.target.checked);
     el.addEventListener("change", handler);
     return () => el.removeEventListener("change", handler);
-  }, [step]);
+  }, [step, noTabs]);
 
   const onChange = useCallback((field, value) => {
     let v = value;
@@ -684,18 +684,18 @@ function App() {
     [data],
   );
 
+  const requiredForNav = noTabs
+    ? [...(STEP_REQUIRED[1] || []), ...(STEP_REQUIRED[2] || [])]
+    : (STEP_REQUIRED[step] || []);
   const canProceed = STRICT_NAV
-    ? (STEP_REQUIRED[step] || []).every((f) => {
-        const v = String(data[f] ?? "").trim();
-        return v.length > 0 && validateField(f, v) === null;
-      })
-    : !(STEP_REQUIRED[step] || []).some((f) => errors[f]);
-  const stepWidths = [1, 2, 3].map((s) => calcStepProgress(s, step, data, agreemrkChecked, done));
+    ? requiredForNav.every((f) => { const v = String(data[f] ?? "").trim(); return v.length > 0 && validateField(f, v) === null; })
+    : !requiredForNav.some((f) => errors[f]);
+  const stepWidths = noTabs ? [] : [1, 2, 3].map((s) => calcStepProgress(s, step, data, agreemrkChecked, done));
 
   return html`
     <div class="padding-xs grid-1">
       <div id="form-component" class="form_component w-form">
-        <${StepIndicator} widths=${stepWidths} />
+        ${!noTabs && html`<${StepIndicator} widths=${stepWidths} />`}
 
         <form
           id="zapytanie"
@@ -706,33 +706,14 @@ function App() {
           class="flex-col gap-md"
           onSubmit=${handleSubmit}
         >
-          ${step === 1 && html`<${Step1} data=${data} errors=${errors} onChange=${onChange} onBlur=${onBlur} />`}
-          ${step === 2 &&
-          html`
+          ${noTabs ? html`
+            <${Step1} data=${data} errors=${errors} onChange=${onChange} onBlur=${onBlur} />
             <${Step2}
-              data=${data}
-              errors=${errors}
-              onChange=${onChange}
-              onBlur=${onBlur}
-              onNipLookup=${handleNipLookup}
-              nipLoading=${nipLoading}
-              nipError=${nipError}
-              nipFilled=${nipFilled}
+              data=${data} errors=${errors} onChange=${onChange} onBlur=${onBlur}
+              onNipLookup=${handleNipLookup} nipLoading=${nipLoading} nipError=${nipError} nipFilled=${nipFilled}
             />
-          `}
-          ${step === 3 && html`<${Step3} data=${data} onChange=${onChange} />`}
-          ${step === 3 &&
-          html`
-            <div key=${step3Key} style="display:none">
-              <input type="hidden" name="first_name" value=${data.first_name} />
-              <input type="hidden" name="last_name" value=${data.last_name} />
-              <input type="hidden" name="email" value=${data.email} />
-              <input type="hidden" name="phone" value=${data.phone} />
-              <input type="hidden" name="tax_number" value=${data.tax_number} />
-              <input type="hidden" name="company_name" value=${data.company_name} />
-              <input type="hidden" name="city" value=${data.city} />
-              <input type="hidden" name="company_workers" value=${data.company_workers} />
-              <input type="hidden" name="department"   value=${data.department} />
+            <${Step3} data=${data} onChange=${onChange} />
+            <div style="display:none">
               <input type="hidden" name="referrer"     value=${data.referrer} />
               <input type="hidden" name="utm_source"   value=${data.utm_source} />
               <input type="hidden" name="utm_medium"   value=${data.utm_medium} />
@@ -740,11 +721,39 @@ function App() {
               <input type="hidden" name="gclid"        value=${data.gclid} />
               <input type="hidden" name="fbclid"       value=${data.fbclid} />
             </div>
+          ` : html`
+            ${step === 1 && html`<${Step1} data=${data} errors=${errors} onChange=${onChange} onBlur=${onBlur} />`}
+            ${step === 2 && html`
+              <${Step2}
+                data=${data} errors=${errors} onChange=${onChange} onBlur=${onBlur}
+                onNipLookup=${handleNipLookup} nipLoading=${nipLoading} nipError=${nipError} nipFilled=${nipFilled}
+              />
+            `}
+            ${step === 3 && html`<${Step3} data=${data} onChange=${onChange} />`}
+            ${step === 3 && html`
+              <div key=${step3Key} style="display:none">
+                <input type="hidden" name="first_name"      value=${data.first_name} />
+                <input type="hidden" name="last_name"       value=${data.last_name} />
+                <input type="hidden" name="email"           value=${data.email} />
+                <input type="hidden" name="phone"           value=${data.phone} />
+                <input type="hidden" name="tax_number"      value=${data.tax_number} />
+                <input type="hidden" name="company_name"    value=${data.company_name} />
+                <input type="hidden" name="city"            value=${data.city} />
+                <input type="hidden" name="company_workers" value=${data.company_workers} />
+                <input type="hidden" name="department"      value=${data.department} />
+                <input type="hidden" name="referrer"        value=${data.referrer} />
+                <input type="hidden" name="utm_source"      value=${data.utm_source} />
+                <input type="hidden" name="utm_medium"      value=${data.utm_medium} />
+                <input type="hidden" name="utm_campaign"    value=${data.utm_campaign} />
+                <input type="hidden" name="gclid"           value=${data.gclid} />
+                <input type="hidden" name="fbclid"          value=${data.fbclid} />
+              </div>
+            `}
           `}
 
           <div class="form-nav">
             <div class="form-nav_left">
-              ${step > 1 && (ARROW_BTN ? html`
+              ${!noTabs && step > 1 && (ARROW_BTN ? html`
                 <button type="button" onClick=${goBack}
                   class="better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block">
                   <div class="better-workplace--button w-variant-e5b64a72-f673-3169-40ad-1f06b1232785" style="min-width:11.625rem;">
@@ -764,7 +773,7 @@ function App() {
               `)}
             </div>
             <div class="form-nav_right">
-              ${step < 3 && (ARROW_BTN ? html`
+              ${!noTabs && step < 3 && (ARROW_BTN ? html`
                 <button type="button" onClick=${goNext}
                   class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" + (!canProceed ? " is-inactive" : "")}>
                   <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
@@ -785,9 +794,9 @@ function App() {
                   ${COPY.buttons.next}
                 </button>
               `)}
-              ${step === 3 && (ARROW_BTN ? html`
+              ${(noTabs || step === 3) && (ARROW_BTN ? html`
                 <button type="submit"
-                  class="better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block">
+                  class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" + (!canProceed ? " is-inactive" : "")}>
                   <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
                     <div data-button="bg" class="better-workplace--button_bg"></div>
                     <div data-button="padding" class="better-workplace--button_layout">
@@ -802,7 +811,7 @@ function App() {
                   </div>
                 </button>
               ` : html`
-                <button type="submit" class="button">${COPY.buttons.submit}</button>
+                <button type="submit" class=${"button" + (!canProceed ? " is-inactive" : "")}>${COPY.buttons.submit}</button>
               `)}
             </div>
           </div>
@@ -858,14 +867,16 @@ function App() {
 
 export function initForm() {
   const el = document.getElementById("app");
-  if (!el) return;
-  render(html`<${App} />`, el);
+  const elNoTabs = document.getElementById("app-no-tabs");
+  if (el) render(html`<${App} />`, el);
+  if (elNoTabs) render(html`<${App} noTabs=${true} />`, elNoTabs);
 }
 
 export function destroyForm() {
   const el = document.getElementById("app");
-  if (!el) return;
-  render(null, el);
+  const elNoTabs = document.getElementById("app-no-tabs");
+  if (el) render(null, el);
+  if (elNoTabs) render(null, elNoTabs);
 }
 
 initForm();
