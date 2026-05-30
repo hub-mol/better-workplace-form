@@ -1,11 +1,11 @@
 # BetterWorkplace — embed form
 
-Multi-step inquiry form built with Preact (no build step). Designed to run inside an `<iframe>` and communicate with the parent page via `postMessage`.
+Multi-step form built with Preact. Designed to run inside an `<iframe>` and communicate with the parent page via `postMessage`.
 
 ## Files
 
 ```
-form.js           — full form logic (Preact, validation, NIP lookup, Webflow submit)
+form.js           — full form logic (Preact, validation, tax number lookup, Webflow submit)
 examples/
   embed.html      — standalone HTML for local dev
 ```
@@ -24,9 +24,9 @@ The SVG sprite and styles are already on the Webflow page — you only need to a
 On any page where you want the form, paste:
 
 ```html
-<iframe
+<iframe 
   id="bwp-form"
-  src="https://twojadomena.pl/zapytanie"
+  src="https://betterworkplace.pl/kontakt/zapytanie-embeded"
   style="width:100%;border:none;display:block;"
   scrolling="no">
 </iframe>
@@ -58,14 +58,3 @@ On any page where you want the form, paste:
 | `bwp:resize` | iframe → parent | `{ height }` |
 
 The iframe sends `bwp:request-info` on mount. The parent responds with `bwp:info` containing the current page URL. `brand` is optional — if omitted, it's extracted automatically from the hostname.
-
-## Releases
-
-Tag a release when the form is ready to ship:
-
-```bash
-git tag v1.0
-git push --tags
-```
-
-Update the `VERSION` in the Webflow script tag to load the new version. Pages that aren't updated keep loading the previous tag unchanged.
