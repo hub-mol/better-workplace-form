@@ -563,11 +563,6 @@ function App() {
     return () => window.removeEventListener("message", handler);
   }, []);
 
-  // Re-init Webflow when step 3 renders so it picks up the checkbox
-  useEffect(() => {
-    if (step === 3 && window.Webflow) window.Webflow.init();
-  }, [step]);
-
   // Tell the parent iframe how tall we are so it can resize
   useEffect(() => {
     if (typeof ResizeObserver === "undefined" || window === window.parent) return;
