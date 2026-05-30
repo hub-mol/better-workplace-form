@@ -1,3 +1,5 @@
+// build: 2026-05-30
+
 import { html, render, useState, useEffect, useCallback }
   from 'https://unpkg.com/htm/preact/standalone.module.js';
 
@@ -232,7 +234,7 @@ function Field({ id, label, required, error, children }) {
           <use href="#error" viewBox="0 0 32 32"></use>
         </svg>
       </div>
-      <span aria-live="polite" role="alert"
+      <span aria-live="polite"
         class=${'form_validation-error-text' + (error ? ' is-visible' : '')}>
         ${error || ''}
       </span>
