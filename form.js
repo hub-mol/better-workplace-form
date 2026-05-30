@@ -109,6 +109,10 @@ const STEP_REQUIRED = {
 // false = walidacja tylko po kliknięciu Next (poprzednie zachowanie)
 const STRICT_NAV = true;
 
+// true  = przyciski w stylu Webflow arrow (better-workplace--button-component)
+// false = proste przyciski (button / button is-secondary)
+const ARROW_BTN = true;
+
 // ─── phone ───────────────────────────────────────────────────────────────────
 
 // fixed: true = group subscriber digits in 3s; false = just separate CC from number
@@ -275,6 +279,7 @@ function extractUtm(url) {
 // zwraca CSS width string: "X%", "0.675rem" (current + empty), lub "0"
 function calcStepProgress(stepNum, currentStep, data, agreemrkChecked, done) {
   if (done) return "100%";
+  if (stepNum > currentStep) return "0"; // next i dalsze: zawsze puste
   const valid = (f) => {
     const v = String(data[f] ?? "").trim();
     return v.length > 0 && validateField(f, v) === null;
@@ -284,9 +289,8 @@ function calcStepProgress(stepNum, currentStep, data, agreemrkChecked, done) {
   if (stepNum === 1) n = ["first_name", "last_name", "email", "phone"].filter(valid).length;
   else if (stepNum === 2) n = ["tax_number", "company_name", "city", "company_workers"].filter(valid).length;
   else if (stepNum === 3) { n = (String(data.f_message ?? "").trim() ? 1 : 0) + (agreemrkChecked ? 1 : 0); mul = 50; }
-  if (n > 0) return n * mul + "%";
-  if (stepNum === currentStep) return "0.675rem"; // current, nic nie wypełnione — mały wskaźnik
-  return "0";                                     // past bez pól (edge) lub future
+  if (stepNum === currentStep) return n > 0 ? n * mul + "%" : "0.675rem"; // current: min wskaźnik
+  return n * mul + "%"; // past: rzeczywisty fill, może być 0%
 }
 
 // ─── components ──────────────────────────────────────────────────────────────
@@ -740,19 +744,66 @@ function App() {
 
           <div class="form-nav">
             <div class="form-nav_left">
-              ${step > 1 && html` <button type="button" class="button is-secondary" onClick=${goBack}>${COPY.buttons.back}</button> `}
+              ${step > 1 && (ARROW_BTN ? html`
+                <button type="button" onClick=${goBack}
+                  class="better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block">
+                  <div class="better-workplace--button w-variant-e5b64a72-f673-3169-40ad-1f06b1232785" style="min-width:11.625rem;">
+                    <div data-button="bg" class="better-workplace--button_bg"></div>
+                    <div class="better-workplace--button_layout">
+                      <div class="better-workplace--button_relative">
+                        <svg data-wf--better-workplace--icon--variant="md" viewBox="0 0 24 24" class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f">
+                          <use href="#arrow-left" viewBox="0 0 32 32"></use>
+                        </svg>
+                      </div>
+                      <div data-button="text" class="better-workplace--button_text">${COPY.buttons.back}</div>
+                    </div>
+                  </div>
+                </button>
+              ` : html`
+                <button type="button" class="button is-secondary" onClick=${goBack}>${COPY.buttons.back}</button>
+              `)}
             </div>
             <div class="form-nav_right">
-              ${step < 3 &&
-              html`
+              ${step < 3 && (ARROW_BTN ? html`
+                <button type="button" onClick=${goNext}
+                  class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" + (!canProceed ? " is-inactive" : "")}>
+                  <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
+                    <div data-button="bg" class="better-workplace--button_bg"></div>
+                    <div data-button="padding" class="better-workplace--button_layout">
+                      <div class="better-workplace--button_text">${COPY.buttons.next}</div>
+                      <div class="better-workplace--button_relative">
+                        <svg data-wf--better-workplace--icon--variant="md" viewBox="0 0 24 24" class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f">
+                          <use href="#arrow-right" viewBox="0 0 32 32"></use>
+                        </svg>
+                        <div data-button="circle" class="better-workplace--button_icon-bg"></div>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ` : html`
                 <button type="button" class=${"button" + (!canProceed ? " is-inactive" : "")} onClick=${goNext}>
                   ${COPY.buttons.next}
                 </button>
-              `}
-              ${step === 3 &&
-              html`
+              `)}
+              ${step === 3 && (ARROW_BTN ? html`
+                <button type="submit"
+                  class="better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block">
+                  <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
+                    <div data-button="bg" class="better-workplace--button_bg"></div>
+                    <div data-button="padding" class="better-workplace--button_layout">
+                      <div class="better-workplace--button_text">${COPY.buttons.submit}</div>
+                      <div class="better-workplace--button_relative">
+                        <svg data-wf--better-workplace--icon--variant="md" viewBox="0 0 24 24" class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f">
+                          <use href="#arrow-right" viewBox="0 0 32 32"></use>
+                        </svg>
+                        <div data-button="circle" class="better-workplace--button_icon-bg"></div>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              ` : html`
                 <button type="submit" class="button">${COPY.buttons.submit}</button>
-              `}
+              `)}
             </div>
           </div>
 
