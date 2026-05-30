@@ -471,16 +471,12 @@ ${data.f_message}</textarea
         >
       </div>
       <label class="w-checkbox form_checkbox">
-        <div
-          class=${"w-checkbox-input w-checkbox-input--inputType-custom form_checkbox-icon" +
-          (data.agreemrk ? " w--redirected-checked" : "")}
-        ></div>
+        <div class="w-checkbox-input w-checkbox-input--inputType-custom form_checkbox-icon"></div>
         <input
           type="checkbox"
           id="agreemrk"
           name="agreemrk"
-          checked=${data.agreemrk}
-          onChange=${(e) => onChange("agreemrk", e.target.checked)}
+          data-name="agreemrk"
           style="opacity:0;position:absolute;z-index:-1"
         />
         <span class="form_checkbox-label w-form-label" for="agreemrk"> ${COPY.legal.newsletter} </span>
@@ -537,6 +533,11 @@ function App() {
     window.parent.postMessage({ type: "bwp:request-info" }, "*");
     return () => window.removeEventListener("message", handler);
   }, []);
+
+  // Re-init Webflow when step 3 renders so it picks up the checkbox
+  useEffect(() => {
+    if (step === 3 && window.Webflow) window.Webflow.init();
+  }, [step]);
 
   // Tell the parent iframe how tall we are so it can resize
   useEffect(() => {
