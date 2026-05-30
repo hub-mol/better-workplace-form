@@ -235,7 +235,7 @@ function Field({ id, label, required, error, children }) {
               <use href="#error" viewBox="0 0 32 32"></use>
             </svg>
           </div>
-          <span>${error}</span>
+          <span class="form_validation-error-text">${error}</span>
         `}
       </div>
     </div>
@@ -304,7 +304,11 @@ function Step2({ data, errors, onChange, onBlur, onNipLookup, nipLoading, nipErr
       ${nipError && html`
         <div data-wf--better-workplace--system-box--variant="error"
           class="better-workplace--info-callout w-variant-cebccc58-4999-fc0e-403f-40fd53f94f9e">
-          <div></div>
+          <div>
+            <svg viewBox="0 0 32 32" class="better-workplace--icon-svg">
+              <use href="#error"></use>
+            </svg>
+          </div>
           <div class="better-workplace--info-callout-text w-richtext"><p>${nipError}</p></div>
         </div>
       `}
@@ -312,7 +316,11 @@ function Step2({ data, errors, onChange, onBlur, onNipLookup, nipLoading, nipErr
       ${!nipFilled && html`
         <div data-wf--better-workplace--system-box--variant="info"
           class="better-workplace--info-callout">
-          <div></div>
+          <div>
+            <svg viewBox="0 0 32 32" class="better-workplace--icon-svg">
+              <use href="#info"></use>
+            </svg>
+          </div>
           <div class="better-workplace--info-callout-text w-richtext">
             <p>Podaj NIP, resztę uzupełnimy z GUS. Sprawdź czy dane są poprawne.</p>
           </div>
@@ -506,6 +514,7 @@ function App() {
       setNipFilled(true);
     } catch (e) {
       setNipError(e.message);
+      setErrors(prev => ({ ...prev, tax_number: e.message }));
     } finally {
       setNipLoading(false);
     }
@@ -592,7 +601,11 @@ function App() {
           <div class="form_message-error w-form-fail">
             <div data-wf--better-workplace--system-box--variant="error"
               class="better-workplace--info-callout">
-              <div></div>
+              <div>
+                <svg viewBox="0 0 32 32" class="better-workplace--icon-svg">
+                  <use href="#error"></use>
+                </svg>
+              </div>
               <div class="better-workplace--info-callout-text w-richtext">
                 <p>Nie udało się wysłać. Spróbuj ponownie lub napisz:${' '}
                   <a href="mailto:biuro@betterworkplace.pl?subject=B%C5%82%C4%85d%20formularza">
@@ -614,11 +627,9 @@ function App() {
           onInput=${e => setData(d => ({ ...d, website: e.target.value }))} />
       </form>
 
-      <div>
-        <p class="form_checkbox-label" style="display:none">
-          <span class="form_required">*</span>pola wymagane
-        </p>
-      </div>
+      <p class="form_checkbox-label" style="display:none">
+        <span class="form_required">*</span>pola wymagane
+      </p>
     </div>
     </div>
   `;
