@@ -226,18 +226,16 @@ function Field({ id, label, required, error, children }) {
         ${label}
       </label>
       ${children}
-      <div aria-live="polite" role="alert"
-        class=${'form_validation-error' + (error ? ' is-visible' : '')}>
-        ${error && html`
-          <div class="form_validation-error-icon">
-            <svg data-wf--better-workplace--icon--variant="md" viewBox="0 0 24 24"
-              class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f">
-              <use href="#error" viewBox="0 0 32 32"></use>
-            </svg>
-          </div>
-          <span class="form_validation-error-text">${error}</span>
-        `}
+      <div class=${'form_validation-error-icon' + (error ? ' is-visible' : '')}>
+        <svg data-wf--better-workplace--icon--variant="md" viewBox="0 0 24 24"
+          class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f">
+          <use href="#error" viewBox="0 0 32 32"></use>
+        </svg>
       </div>
+      <span aria-live="polite" role="alert"
+        class=${'form_validation-error-text' + (error ? ' is-visible' : '')}>
+        ${error || ''}
+      </span>
     </div>
   `;
 }
@@ -443,9 +441,13 @@ function App() {
   const [nipError,   setNipError]   = useState('');
   const [nipFilled,  setNipFilled]  = useState(false);
 
-  // Get parent page URL and brand via postMessage (we're in an iframe)
+  // Get parent page URL and brand — via postMessage when in iframe, directly otherwise
   useEffect(() => {
-    if (window === window.parent) return;
+    if (window === window.parent) {
+      const href = window.location.href;
+      setData(prev => ({ ...prev, url: href, brand: extractBrand(href) }));
+      return;
+    }
     const handler = (e) => {
       if (e.data?.type !== 'bwp:info') return;
       setData(prev => ({
