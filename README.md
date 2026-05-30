@@ -16,10 +16,8 @@ The SVG sprite and styles are already on the Webflow page — you only need to a
 
 ```html
 <div id="app"></div>
-<script type="module" src="https://cdn.jsdelivr.net/gh/USER/REPO@VERSION/form.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/gh/hub-mol/better-workplace-form@1.0/form.js"></script>
 ```
-
-Replace `USER`, `REPO`, and `VERSION` with your GitHub username, repository name, and tag (e.g. `v1.0`).
 
 ## Embedding on other pages
 
