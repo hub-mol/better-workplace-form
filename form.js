@@ -223,22 +223,24 @@ function StepIndicator({ current }) {
   `;
 }
 
-function Field({ id, label, required, error, children }) {
+function Field({ id, label, required, error, noIcon, children }) {
   return html`
     <div class="form_field-wrapper">
       <label for=${id} class="form_field-label">
         ${required && html`<span class="form_required" aria-hidden="true">*</span>`} ${label}
       </label>
       ${children}
-      <div class="form_validation-error-icon" style=${{ visibility: error ? "visible" : "hidden" }}>
-        <svg
-          data-wf--better-workplace--icon--variant="md"
-          viewBox="0 0 24 24"
-          class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
-        >
-          <use href="#error" viewBox="0 0 32 32"></use>
-        </svg>
-      </div>
+      ${!noIcon && html`
+        <div class="form_validation-error-icon" style=${{ visibility: error ? "visible" : "hidden" }}>
+          <svg
+            data-wf--better-workplace--icon--variant="md"
+            viewBox="0 0 24 24"
+            class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
+          >
+            <use href="#error" viewBox="0 0 32 32"></use>
+          </svg>
+        </div>
+      `}
       <span aria-live="polite" class="form_validation-error-text" style=${{ visibility: error ? "visible" : "hidden" }}>
         ${error || ""}
       </span>
@@ -318,7 +320,7 @@ function Step2({ data, errors, onChange, onBlur, onNipLookup, nipLoading, nipErr
             class="better-workplace--info-callout w-variant-cebccc58-4999-fc0e-403f-40fd53f94f9e"
           >
             <div>
-              <svg viewBox="0 0 24 24" class="better-workplace--icon-svg">
+              <svg viewBox="0 0 24 24" class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f">
                 <use href="#error" viewBox="0 0 32 32"></use>
               </svg>
             </div>
@@ -337,7 +339,7 @@ function Step2({ data, errors, onChange, onBlur, onNipLookup, nipLoading, nipErr
               </svg>
             </div>
             <div class="better-workplace--info-callout-text">
-              <p>Podaj NIP, resztę uzupełnimy z&nbsp;GUS. Sprawdź czy dane są&nbsp;poprawne.</p>
+              <p>Podaj NIP, resztę uzupełnimy z GUS. Sprawdź czy dane są poprawne.</p>
             </div>
           </div>
         `
@@ -366,7 +368,7 @@ function Step2({ data, errors, onChange, onBlur, onNipLookup, nipLoading, nipErr
         </div>
 
         <div class="grid-1-2 gap-xs">
-          <${Field} id="company_workers" label="Liczba pracowników" required
+          <${Field} id="company_workers" label="Liczba pracowników" required noIcon
             error=${errors.company_workers}>
             <select id="company_workers" name="company_workers"
               class=${"form_input is-select w-select" + (errors.company_workers ? " is-validation-error" : "")}
@@ -423,7 +425,9 @@ function Step3({ data, onChange }) {
           placeholder="Np. interesują nas owoce i kawa dla 50 osób w biurze w Warszawie."
           class="form_input is-text-area w-input"
           onInput=${(e) => onChange("f_message", e.target.value)}
-        >${data.f_message}</textarea>
+        >
+${data.f_message}</textarea
+        >
       </div>
       <label class="w-checkbox form_checkbox">
         <div
@@ -581,7 +585,7 @@ function App() {
   if (status === "success") {
     return html`
       <div class="padding-xs">
-        <div class="form_message-success w-form-done">
+        <div class="form_message-success w-form-done" style="display:block">
           <div data-wf--better-workplace--form-success-error-message--form-type="zapytanie" class="better-workplace--form_message">
             <img
               width="200"
@@ -611,8 +615,6 @@ function App() {
 
         <form
           id="zapytanie"
-          name="wf-form-zapytanie"
-          data-name="zapytanie"
           method="post"
           novalidate
           class="flex-col gap-md"
@@ -658,7 +660,7 @@ function App() {
 
           ${status === "error" &&
           html`
-            <div class="form_message-error w-form-fail">
+            <div class="form_message-error w-form-fail" style="display:block">
               <div data-wf--better-workplace--system-box--variant="error" class="better-workplace--info-callout">
                 <div>
                   <svg viewBox="0 0 24 24" class="better-workplace--icon-svg">
