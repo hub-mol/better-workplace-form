@@ -573,6 +573,7 @@ function App() {
     return () => obs.disconnect();
   }, []);
 
+
   const onChange = useCallback((field, value) => {
     let v = value;
     if (field === "phone") v = value.replace(/[^\d\s+]/g, "");
@@ -630,7 +631,8 @@ function App() {
   const handleSubmit = useCallback(
     (e) => {
       if (data.website) { e.preventDefault(); return; } // honeypot — cicha blokada
-      log('submit', data);
+      log("submit", data);
+      setStatus("submitting"); // Webflow.js przejmuje submit; my tylko oznaczamy stan
     },
     [data],
   );
@@ -720,34 +722,36 @@ function App() {
           />
         </form>
 
-        <div class="form_message-success w-form-done" style="display:flex">
-          <div data-wf--better-workplace--form-success-error-message--form-type="zapytanie" class="better-workplace--form_message">
-            <img width="200" loading="lazy" alt=""
-              src="https://cdn.prod.website-files.com/698dfabcdd705500e5451b80/69bf0c5d6a239b30c2a0bdb7_8545e3aafd9ab74c802300e1c7cfe012_mail-success.avif"
-              class="better-workplace--form_message_img" />
-            <div class="better-workplace--form_message_text">
-              <p class="better-workplace--heading-style-h5">Dziękujemy!<br />Twoje zapytanie zostało wysłane.</p>
-              <p class="better-workplace--text-size-md">
-                Nasz konsultant skontaktuje się z Tobą w ciągu 24h (dni robocze), aby omówić szczegóły dostępnej oferty.
-              </p>
+        ${step === 3 && html`
+          <div class="form_message-success w-form-done">
+            <div data-wf--better-workplace--form-success-error-message--form-type="zapytanie" class="better-workplace--form_message">
+              <img width="200" loading="lazy" alt=""
+                src="https://cdn.prod.website-files.com/698dfabcdd705500e5451b80/69bf0c5d6a239b30c2a0bdb7_8545e3aafd9ab74c802300e1c7cfe012_mail-success.avif"
+                class="better-workplace--form_message_img" />
+              <div class="better-workplace--form_message_text">
+                <p class="better-workplace--heading-style-h5">Dziękujemy!<br />Twoje zapytanie zostało wysłane.</p>
+                <p class="better-workplace--text-size-md">
+                  Nasz konsultant skontaktuje się z Tobą w ciągu 24h (dni robocze), aby omówić szczegóły dostępnej oferty.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="form_message-error w-form-fail" style="display:flex">
-          <div data-wf--better-workplace--system-box--variant="error" class="better-workplace--info-callout">
-            <div>
-              <svg viewBox="0 0 32 32" class="better-workplace--icon-svg">
-                <use href="#error"></use>
-              </svg>
-            </div>
-            <div class="better-workplace--info-callout-text">
-              <p>Nie udało się wysłać. Spróbuj ponownie lub napisz:${' '}
-                <a href="mailto:biuro@betterworkplace.pl?subject=B%C5%82%C4%85d%20formularza">biuro@betterworkplace.pl</a>
-              </p>
+          <div class="form_message-error w-form-fail">
+            <div data-wf--better-workplace--system-box--variant="error" class="better-workplace--info-callout w-variant-cebccc58-4999-fc0e-403f-40fd53f94f9e">
+              <div>
+                <svg viewBox="0 0 32 32" class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f">
+                  <use href="#error"></use>
+                </svg>
+              </div>
+              <div class="better-workplace--info-callout-text">
+                <p>Nie udało się wysłać. Spróbuj ponownie lub napisz:${' '}
+                  <a href="mailto:biuro@betterworkplace.pl?subject=B%C5%82%C4%85d%20formularza">biuro@betterworkplace.pl</a>
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        `}
 
       </div>
     </div>
