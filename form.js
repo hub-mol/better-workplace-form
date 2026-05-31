@@ -392,10 +392,21 @@ function Step2({ data, errors, onChange, onBlur, onNipLookup, nipLoading, nipErr
             onBlur=${(e) => onBlur("tax_number", e.target.value)} />
         </${Field}>
         <div class="form_field-wrapper">
-          <div class="flex-col">
+          <div class="form_nip">
             <button type="button" onClick=${onNipLookup}
-              class=${"button is-secondary" + (nipLoading ? " is-loading" : "")}>
-              ${nipLoading ? COPY.buttons.nip_loading : COPY.buttons.nip_fetch}
+              class=${"better-workplace--button-component" + (nipLoading ? " is-loading" : "")}>
+              <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
+                <div data-button="bg" class="better-workplace--button_bg"></div>
+                <div data-button="padding" class="better-workplace--button_layout">
+                  <div class="better-workplace--button_text">${nipLoading ? COPY.buttons.nip_loading : COPY.buttons.nip_fetch}</div>
+                  <div class="better-workplace--button_relative">
+                    <svg data-wf--better-workplace--icon--variant="md" viewBox="0 0 24 24" class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f">
+                      <use href="#arrow-right" viewBox="0 0 32 32"></use>
+                    </svg>
+                    <div data-button="circle" class="better-workplace--button_icon-bg"></div>
+                  </div>
+                </div>
+              </div>
             </button>
           </div>
         </div>
@@ -533,6 +544,23 @@ function Step3({ data, onChange }) {
   `;
 }
 
+// ─── scroll ──────────────────────────────────────────────────────────────────
+
+function scrollToForm() {
+  const el = document.getElementById('app') ?? document.getElementById('form-component');
+  if (!el) return;
+  const offset = 100;
+  const rect = el.getBoundingClientRect();
+  if (window !== window.parent) {
+    try {
+      const top = window.parent.scrollY + (window.frameElement?.getBoundingClientRect().top ?? 0) - offset;
+      window.parent.scrollTo({ left: 0, top, behavior: 'smooth' });
+    } catch {}
+  } else {
+    window.scrollTo({ left: rect.left, top: rect.top + window.scrollY - offset, behavior: 'smooth' });
+  }
+}
+
 // ─── app ─────────────────────────────────────────────────────────────────────
 
 function App({ noTabs = false }) {
@@ -638,12 +666,12 @@ function App({ noTabs = false }) {
     }
     if (step === 2) setStep3Key((k) => k + 1);
     setStep((s) => s + 1);
-    window.scrollTo(0, 0);
+    scrollToForm();
   }, [step, data]);
 
   const goBack = useCallback(() => {
     setStep((s) => s - 1);
-    window.scrollTo(0, 0);
+    scrollToForm();
   }, []);
 
   const handleNipLookup = useCallback(async () => {
@@ -755,7 +783,7 @@ function App({ noTabs = false }) {
             <div class="form-nav_left">
               ${!noTabs && step > 1 && (ARROW_BTN ? html`
                 <button type="button" onClick=${goBack}
-                  class="better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block">
+                  class="better-workplace--button-component">
                   <div class="better-workplace--button w-variant-e5b64a72-f673-3169-40ad-1f06b1232785" style="min-width:11.625rem;">
                     <div data-button="bg" class="better-workplace--button_bg"></div>
                     <div class="better-workplace--button_layout">
@@ -775,7 +803,7 @@ function App({ noTabs = false }) {
             <div class="form-nav_right">
               ${!noTabs && step < 3 && (ARROW_BTN ? html`
                 <button type="button" onClick=${goNext}
-                  class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" + (!canProceed ? " is-inactive" : "")}>
+                  class=${"better-workplace--button-component" + (!canProceed ? " is-inactive" : "")}>
                   <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
                     <div data-button="bg" class="better-workplace--button_bg"></div>
                     <div data-button="padding" class="better-workplace--button_layout">
@@ -796,11 +824,14 @@ function App({ noTabs = false }) {
               `)}
               ${(noTabs || step === 3) && (ARROW_BTN ? html`
                 <button type="submit"
-                  class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" + (!canProceed ? " is-inactive" : "")}>
+                  class=${"better-workplace--button-component" + (!canProceed ? " is-inactive" : "")}>
                   <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
                     <div data-button="bg" class="better-workplace--button_bg"></div>
                     <div data-button="padding" class="better-workplace--button_layout">
-                      <div class="better-workplace--button_text">${COPY.buttons.submit}</div>
+                      <div class="better-workplace--button_text">
+                        <span class="hide-mobile">${COPY.buttons.submit}</span>
+                        <span class="show-mobile">Wyślij!</span>
+                      </div>
                       <div class="better-workplace--button_relative">
                         <svg data-wf--better-workplace--icon--variant="md" viewBox="0 0 24 24" class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f">
                           <use href="#arrow-right" viewBox="0 0 32 32"></use>
