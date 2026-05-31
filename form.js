@@ -819,7 +819,10 @@ function App({ noTabs = false }) {
                   class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" + (!canProceed ? " is-inactive" : "")}>
                   <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
                     <div data-button="padding" class="better-workplace--button_layout">
-                      <div class="better-workplace--button_text">${COPY.buttons.submit}</div>
+                      <div class="better-workplace--button_text">
+                        <span class="hide-mobile">${COPY.buttons.submit}</span>
+                        <span class="show-mobile">Wyślij!</span>
+                      </div>
                       <div class="better-workplace--button_relative">
                         <svg data-wf--better-workplace--icon--variant="md" viewBox="0 0 24 24" class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f">
                           <use href="#mail" viewBox="0 0 32 32"></use>
