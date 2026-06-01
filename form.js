@@ -94,6 +94,8 @@ const COPY = {
 
 // ─── config ───────────────────────────────────────────────────────────────────
 
+const WEBFLOW_SITE_ID = '698dfabcdd705500e5451b80';
+
 const STEPS = [
   { id: 1, label: COPY.steps[0] },
   { id: 2, label: COPY.steps[1] },
@@ -683,26 +685,66 @@ function App({ noTabs = false }) {
   }, [data.tax_number]);
 
   const handleSubmit = useCallback(
-    (e) => {
-      if (data.website) {
-        e.preventDefault();
-        return;
-      } // honeypot — cicha blokada
+    async (e) => {
+      e.preventDefault();
+      if (data.website) return; // honeypot — cicha blokada
       log("submit", data);
-      // Po submicie czekamy aż Webflow.js pokaże .w-form-done → done = true → 100%
+
+      const formEl  = e.target;
       const wrapper = document.getElementById("form-component");
-      if (wrapper) {
-        const obs = new MutationObserver(() => {
-          const successDiv = wrapper.querySelector(".w-form-done");
-          if (successDiv?.style.display === "block") {
-            setDone(true);
-            obs.disconnect();
-          }
+      const successEl = wrapper?.querySelector(".w-form-done");
+      const failEl    = wrapper?.querySelector(".w-form-fail");
+
+      try {
+        const res = await fetch(`https://webflow.com/api/v1/form/${WEBFLOW_SITE_ID}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({
+            name:   "zapytanie",
+            source: data.url || window.location.href,
+            test:   false,
+            fields: {
+              first_name:      data.first_name,
+              last_name:       data.last_name,
+              email:           data.email,
+              phone:           data.phone,
+              tax_number:      data.tax_number,
+              company_name:    data.company_name,
+              city:            data.city,
+              company_workers: data.company_workers,
+              department:      data.department,
+              f_message:       data.f_message,
+              agreemrk:        agreemrkChecked ? "on" : false,
+              referrer:        data.referrer,
+              utm_source:      data.utm_source,
+              utm_medium:      data.utm_medium,
+              utm_campaign:    data.utm_campaign,
+              gclid:           data.gclid,
+              fbclid:          data.fbclid,
+              form_type:       "zapytanie",
+              brand:           data.brand,
+              url:             data.url,
+            },
+            dolphin: false,
+          }),
         });
-        obs.observe(wrapper, { attributes: true, subtree: true, attributeFilter: ["style"] });
+
+        if (res.ok) {
+          if (formEl)    formEl.style.display    = "none";
+          if (successEl) { successEl.style.display = "block"; setDone(true); }
+          window.dataLayer = window.dataLayer || [];
+          window.dataLayer.push({ event: "form_success", formID: "zapytanie" });
+          log("submit success");
+        } else {
+          if (failEl) failEl.style.display = "block";
+          log("submit error", res.status);
+        }
+      } catch (err) {
+        if (failEl) failEl.style.display = "block";
+        log("submit exception", err.message);
       }
     },
-    [data],
+    [data, agreemrkChecked],
   );
 
   const requiredForNav = noTabs ? [...(STEP_REQUIRED[1] || []), ...(STEP_REQUIRED[2] || [])] : STEP_REQUIRED[step] || [];
@@ -851,11 +893,29 @@ function App({ noTabs = false }) {
                       ${COPY.buttons.next}
                     </button>
                   `)}
-              ${(noTabs || step === 3) && html`
-                <input type="submit" data-wait="Wysyłam..."
-                  class=${"button w-button" + (!canProceed ? " is-inactive" : "")}
-                  value=${COPY.buttons.submit} />
-              `}
+              ${(noTabs || step === 3) &&
+              (ARROW_BTN
+                ? html`
+                    <button type="submit"
+                      class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" + (!canProceed ? " is-inactive" : "")}>
+                      <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
+                        <div data-button="padding" class="better-workplace--button_layout">
+                          <div class="better-workplace--button_text">
+                            <span class="hide-mobile">${COPY.buttons.submit}</span>
+                            <span class="show-mobile">${COPY.buttons.shortsubmit}</span>
+                          </div>
+                          <div class="better-workplace--button_relative">
+                            <svg data-wf--better-workplace--icon--variant="md" viewBox="0 0 24 24" class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f">
+                              <use href="#mail" viewBox="0 0 32 32"></use>
+                            </svg>
+                            <div data-button="circle" class="better-workplace--button_icon-bg"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  `
+                : html`<button type="submit" class=${"button" + (!canProceed ? " is-inactive" : "")}>${COPY.buttons.submit}</button>`
+              )}
             </div>
           </div>
 
@@ -874,7 +934,7 @@ function App({ noTabs = false }) {
           />
         </form>
 
-        <div class="form_message-success w-form-done" tabindex="-1" role="region" aria-label="zapytanie success">
+        <div class="form_message-success w-form-done" tabindex="-1" role="region" aria-label="zapytanie success" style="display:none">
           <div data-wf--better-workplace--form-success-error-message--form-type="zapytanie" class="better-workplace--form_message">
             <img
               width="200"
@@ -892,7 +952,7 @@ function App({ noTabs = false }) {
           </div>
         </div>
 
-        <div class="form_message-error w-form-fail" tabindex="-1" role="region" aria-label="zapytanie failure">
+        <div class="form_message-error w-form-fail" tabindex="-1" role="region" aria-label="zapytanie failure" style="display:none">
           <div
             data-wf--better-workplace--system-box--variant="error"
             class="better-workplace--info-callout w-variant-cebccc58-4999-fc0e-403f-40fd53f94f9e"
