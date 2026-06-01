@@ -1,4 +1,4 @@
-// build: 2026-05-30
+// build: 2026-06-01
 
 import { html, render, useState, useEffect, useCallback } from "https://unpkg.com/htm/preact/standalone.module.js";
 
@@ -256,9 +256,10 @@ async function lookupNip(nip) {
 
 function extractBrand(url) {
   try {
-    return new URL(url).hostname.replace(/^www\./, "").split(".")[0];
+    const name = new URL(url).hostname.replace(/^www\./, "").split(".")[0];
+    return name ? name.charAt(0).toUpperCase() + name.slice(1) : "BetterWorkplace";
   } catch {
-    return "";
+    return "BetterWorkplace";
   }
 }
 
@@ -732,6 +733,7 @@ function App({ noTabs = false }) {
         if (res.ok) {
           if (formEl)    formEl.style.display    = "none";
           if (successEl) { successEl.style.display = "block"; setDone(true); }
+          if (noTabs)    window.scrollTo({ top: 0, behavior: "smooth" });
           window.dataLayer = window.dataLayer || [];
           window.dataLayer.push({ event: "form_success", formID: "zapytanie" });
           log("submit success");
@@ -901,7 +903,7 @@ function App({ noTabs = false }) {
                       <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
                         <div data-button="padding" class="better-workplace--button_layout">
                           <div class="better-workplace--button_text">
-                            <span class="hide-mobile">${COPY.buttons.submit}</span>
+                            <span class="hide-mobile-portrait">${COPY.buttons.submit}</span>
                             <span class="show-mobile">${COPY.buttons.shortsubmit}</span>
                           </div>
                           <div class="better-workplace--button_relative">
