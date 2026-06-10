@@ -97,7 +97,7 @@ const COPY = {
 
 // ─── config ───────────────────────────────────────────────────────────────────
 
-const WEBFLOW_SITE_ID = '698dfabcdd705500e5451b80';
+const WEBFLOW_SITE_ID = "698dfabcdd705500e5451b80";
 
 const STEPS = [
   { id: 1, label: COPY.steps[0] },
@@ -720,49 +720,52 @@ function App({ noTabs = false }) {
       if (data.website) return; // honeypot — cicha blokada
       log("submit", data);
 
-      const formEl  = e.target;
+      const formEl = e.target;
       const wrapper = document.getElementById("form-component");
       const successEl = wrapper?.querySelector(".w-form-done");
-      const failEl    = wrapper?.querySelector(".w-form-fail");
+      const failEl = wrapper?.querySelector(".w-form-fail");
 
       try {
         const res = await fetch(`https://webflow.com/api/v1/form/${WEBFLOW_SITE_ID}`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
           body: JSON.stringify({
-            name:   "zapytanie",
+            name: "zapytanie",
             source: data.url || window.location.href,
-            test:   false,
+            test: false,
             fields: {
-              first_name:      data.first_name,
-              last_name:       data.last_name,
-              email:           data.email,
-              phone:           data.phone,
-              tax_number:      data.tax_number,
-              company_name:    data.company_name,
-              city:            data.city,
+              first_name: data.first_name,
+              last_name: data.last_name,
+              email: data.email,
+              phone: data.phone,
+              tax_number: data.tax_number,
+              company_name: data.company_name,
+              city: data.city,
               company_workers: data.company_workers,
-              department:      data.department,
-              f_message:       data.f_message,
-              agreemrk:        agreemrkChecked ? "on" : false,
-              referrer:        data.referrer,
-              utm_source:      data.utm_source,
-              utm_medium:      data.utm_medium,
-              utm_campaign:    data.utm_campaign,
-              gclid:           data.gclid,
-              fbclid:          data.fbclid,
-              form_type:       "zapytanie",
-              brand:           data.brand,
-              url:             data.url,
+              department: data.department,
+              f_message: data.f_message,
+              agreemrk: agreemrkChecked ? "on" : false,
+              referrer: data.referrer,
+              utm_source: data.utm_source,
+              utm_medium: data.utm_medium,
+              utm_campaign: data.utm_campaign,
+              gclid: data.gclid,
+              fbclid: data.fbclid,
+              form_type: "zapytanie",
+              brand: data.brand,
+              url: data.url,
             },
             dolphin: false,
           }),
         });
 
         if (res.ok) {
-          if (formEl)    formEl.style.display    = "none";
-          if (successEl) { successEl.style.display = "block"; setDone(true); }
-          if (noTabs)    window.scrollTo({ top: 0, behavior: "smooth" });
+          if (formEl) formEl.style.display = "none";
+          if (successEl) {
+            successEl.style.display = "block";
+            setDone(true);
+          }
+          if (noTabs) window.scrollTo({ top: 0, behavior: "smooth" });
           window.dataLayer = window.dataLayer || [];
           window.dataLayer.push({ event: "form_success", formID: "zapytanie" });
           log("submit success");
@@ -788,7 +791,7 @@ function App({ noTabs = false }) {
   const stepWidths = noTabs ? [] : [1, 2, 3].map((s) => calcStepProgress(s, step, data, agreemrkChecked, done, marketing));
 
   return html`
-    <div class="padding-xs grid-1">
+    <div class="card padding-xl grid-1">
       <div id="form-component" class="form_component w-form">
         ${!noTabs && html`<${StepIndicator} widths=${stepWidths} />`}
 
@@ -927,8 +930,11 @@ function App({ noTabs = false }) {
               ${(noTabs || step === 3) &&
               (ARROW_BTN
                 ? html`
-                    <button type="submit"
-                      class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" + (!canProceed ? " is-inactive" : "")}>
+                    <button
+                      type="submit"
+                      class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" +
+                      (!canProceed ? " is-inactive" : "")}
+                    >
                       <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
                         <div data-button="padding" class="better-workplace--button_layout">
                           <div class="better-workplace--button_text">
@@ -936,7 +942,11 @@ function App({ noTabs = false }) {
                             <span class="show-mobile">${COPY.buttons.shortsubmit}</span>
                           </div>
                           <div class="better-workplace--button_relative">
-                            <svg data-wf--better-workplace--icon--variant="md" viewBox="0 0 24 24" class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f">
+                            <svg
+                              data-wf--better-workplace--icon--variant="md"
+                              viewBox="0 0 24 24"
+                              class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
+                            >
                               <use href="#mail" viewBox="0 0 32 32"></use>
                             </svg>
                             <div data-button="circle" class="better-workplace--button_icon-bg"></div>
@@ -945,8 +955,7 @@ function App({ noTabs = false }) {
                       </div>
                     </button>
                   `
-                : html`<button type="submit" class=${"button" + (!canProceed ? " is-inactive" : "")}>${COPY.buttons.submit}</button>`
-              )}
+                : html`<button type="submit" class=${"button" + (!canProceed ? " is-inactive" : "")}>${COPY.buttons.submit}</button>`)}
             </div>
           </div>
 
