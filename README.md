@@ -50,6 +50,22 @@ On any page where you want the form, paste:
 </script>
 ```
 
+### Branding overrides
+
+Add `company` and/or `marketing` as query params on the iframe's `src` — no script changes needed:
+
+```html
+<iframe
+  id="bwp-form"
+  src="https://betterworkplace.pl/kontakt/zapytanie-embeded?company=Dailyfruits+Sp.+z+o.o.&marketing=1"
+  style="width:100%;border:none;display:block;"
+  scrolling="no">
+</iframe>
+```
+
+- **`company`** — replaces "Betterworkplace Sp. z o.o." in the step-3 consent text.
+- **`marketing`** (any value, e.g. `marketing=1`) — shows the newsletter opt-in checkbox. Hidden by default.
+
 ## postMessage protocol
 
 | Message | Direction | Payload |

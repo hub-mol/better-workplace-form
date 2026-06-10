@@ -1,4 +1,4 @@
-// build: 2026-06-01
+// build: 2026-06-10
 
 import { html, render, useState, useEffect, useCallback } from "https://unpkg.com/htm/preact/standalone.module.js";
 
@@ -20,6 +20,9 @@ const PERSONAL_EMAIL_DOMAINS = [
 ];
 
 // ─── copy ────────────────────────────────────────────────────────────────────
+
+// shown in the step-3 consent text unless overridden via the `company` embed param
+const DEFAULT_COMPANY = "Betterworkplace Sp. z o.o.";
 
 const COPY = {
   steps: ["Dane kontaktowe", "Dane firmy", "Pytanie"],
@@ -84,9 +87,9 @@ const COPY = {
     shortsubmit: "Wyślij!",
   },
   legal: {
-    newsletter: "Chcę otrzymywać od Betterworkplace Sp. z o.o. newslettera o tematyce benefitów pozapłacowych",
-    privacy:
-      "Wysyłając ten formularz, wyrażasz zgodę na przetwarzanie Twoich danych przez Betterworkplace Sp. z o.o. i kontakt z Tobą w celu realizacji Twojego zapytania. Aby dowiedzieć się więcej o tym, jak dbamy o ochronę i poszanowanie Twojej prywatności, zapoznaj się z naszą ",
+    newsletter: (company) => `Chcę otrzymywać od ${company || DEFAULT_COMPANY} newslettera o tematyce benefitów pozapłacowych`,
+    privacy: (company) =>
+      `Wysyłając ten formularz, wyrażasz zgodę na przetwarzanie Twoich danych przez ${company || DEFAULT_COMPANY} i kontakt z Tobą w celu realizacji Twojego zapytania. Aby dowiedzieć się więcej o tym, jak dbamy o ochronę i poszanowanie Twojej prywatności, zapoznaj się z naszą `,
     privacy_link_label: "Polityką prywatności",
     privacy_link_url: "https://www.betterworkplace.pl/privacy-policy",
   },
@@ -281,7 +284,7 @@ function extractUtm(url) {
 // ─── progress ────────────────────────────────────────────────────────────────
 
 // zwraca CSS width string: "X%", "0.675rem" (current + empty), lub "0"
-function calcStepProgress(stepNum, currentStep, data, agreemrkChecked, done) {
+function calcStepProgress(stepNum, currentStep, data, agreemrkChecked, done, marketing = false) {
   if (done) return "100%";
   if (stepNum > currentStep) return "0"; // next i dalsze: zawsze puste
   const valid = (f) => {
@@ -293,8 +296,10 @@ function calcStepProgress(stepNum, currentStep, data, agreemrkChecked, done) {
   if (stepNum === 1) n = ["first_name", "last_name", "email", "phone"].filter(valid).length;
   else if (stepNum === 2) n = ["tax_number", "company_name", "city", "company_workers"].filter(valid).length;
   else if (stepNum === 3) {
-    n = (String(data.f_message ?? "").trim() ? 1 : 0) + (agreemrkChecked ? 1 : 0);
-    mul = 50;
+    const messageFilled = String(data.f_message ?? "").trim() ? 1 : 0;
+    // marketing checkbox shown only when explicitly enabled (default: hidden)
+    n = marketing ? messageFilled + (agreemrkChecked ? 1 : 0) : messageFilled;
+    mul = marketing ? 50 : 100;
   }
   if (stepNum === currentStep) return n > 0 ? n * mul + "%" : "0.675rem"; // current: min wskaźnik
   return n * mul + "%"; // past: rzeczywisty fill, może być 0%
@@ -501,7 +506,7 @@ function Step2({ data, errors, onChange, onBlur, onNipLookup, nipLoading, nipErr
   `;
 }
 
-function Step3({ data, onChange }) {
+function Step3({ data, onChange, company, marketing }) {
   return html`
     <fieldset class="flex-col gap-xs form-step">
       <div>
@@ -521,13 +526,16 @@ function Step3({ data, onChange }) {
 ${data.f_message}</textarea
         >
       </div>
-      <label class="w-checkbox form_checkbox">
-        <div class="w-checkbox-input w-checkbox-input--inputType-custom form_checkbox-icon"></div>
-        <input type="checkbox" id="agreemrk" name="agreemrk" data-name="agreemrk" style="opacity:0;position:absolute;z-index:-1" />
-        <span class="form_checkbox-label w-form-label" for="agreemrk"> ${COPY.legal.newsletter} </span>
-      </label>
+      ${marketing &&
+      html`
+        <label class="w-checkbox form_checkbox">
+          <div class="w-checkbox-input w-checkbox-input--inputType-custom form_checkbox-icon"></div>
+          <input type="checkbox" id="agreemrk" name="agreemrk" data-name="agreemrk" style="opacity:0;position:absolute;z-index:-1" />
+          <span class="form_checkbox-label w-form-label" for="agreemrk"> ${COPY.legal.newsletter(company)} </span>
+        </label>
+      `}
       <p class="form_checkbox-label text-size-xs">
-        ${COPY.legal.privacy}
+        ${COPY.legal.privacy(company)}
         <a href=${COPY.legal.privacy_link_url} class="text-style-link-sm">${COPY.legal.privacy_link_label}</a>.
       </p>
     </fieldset>
@@ -584,6 +592,16 @@ function App({ noTabs = false }) {
   const [nipFilled, setNipFilled] = useState(false);
   const [agreemrkChecked, setAgreemrkChecked] = useState(false);
   const [done, setDone] = useState(false);
+  const [company, setCompany] = useState("");
+  const [marketing, setMarketing] = useState(false);
+
+  // company/marketing overrides come from this page's own URL — works the same
+  // whether we're standalone or the src= of an iframe (location is the iframe's own)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("company")) setCompany(params.get("company"));
+    if (params.has("marketing")) setMarketing(true);
+  }, []);
 
   // Get parent page URL and brand — via postMessage when in iframe, directly otherwise
   useEffect(() => {
@@ -612,14 +630,25 @@ function App({ noTabs = false }) {
   }, []);
 
   // Tell the parent iframe how tall we are so it can resize
+  // documentElement always reports the viewport height (Webflow's CSS), so we
+  // measure the actual mount node instead.
+  const formHeight = () => document.getElementById(noTabs ? "app-no-tabs" : "app")?.scrollHeight ?? document.documentElement.scrollHeight;
+
   useEffect(() => {
     if (typeof ResizeObserver === "undefined" || window === window.parent) return;
+    const target = document.getElementById(noTabs ? "app-no-tabs" : "app") ?? document.documentElement;
     const obs = new ResizeObserver(() => {
-      window.parent.postMessage({ type: "bwp:resize", height: document.documentElement.scrollHeight }, "*");
+      window.parent.postMessage({ type: "bwp:resize", height: formHeight() }, "*");
     });
-    obs.observe(document.documentElement);
+    obs.observe(target);
     return () => obs.disconnect();
   }, []);
+
+  // NIP lookup reveals/hides company fields — resize once that settles
+  useEffect(() => {
+    if (window === window.parent) return;
+    window.parent.postMessage({ type: "bwp:resize", height: formHeight() }, "*");
+  }, [nipFilled, nipError]);
 
   // Śledź stan checkboxa agreemrk (kontrolowanego przez Webflow.js)
   useEffect(() => {
@@ -756,7 +785,7 @@ function App({ noTabs = false }) {
         return v.length > 0 && validateField(f, v) === null;
       })
     : !requiredForNav.some((f) => errors[f]);
-  const stepWidths = noTabs ? [] : [1, 2, 3].map((s) => calcStepProgress(s, step, data, agreemrkChecked, done));
+  const stepWidths = noTabs ? [] : [1, 2, 3].map((s) => calcStepProgress(s, step, data, agreemrkChecked, done, marketing));
 
   return html`
     <div class="padding-xs grid-1">
@@ -785,7 +814,7 @@ function App({ noTabs = false }) {
                   nipError=${nipError}
                   nipFilled=${nipFilled}
                 />
-                <${Step3} data=${data} onChange=${onChange} />
+                <${Step3} data=${data} onChange=${onChange} company=${company} marketing=${marketing} />
                 <div style="display:none">
                   <input type="hidden" name="referrer" value=${data.referrer} />
                   <input type="hidden" name="utm_source" value=${data.utm_source} />
@@ -810,7 +839,7 @@ function App({ noTabs = false }) {
                     nipFilled=${nipFilled}
                   />
                 `}
-                ${step === 3 && html`<${Step3} data=${data} onChange=${onChange} />`}
+                ${step === 3 && html`<${Step3} data=${data} onChange=${onChange} company=${company} marketing=${marketing} />`}
                 ${step === 3 &&
                 html`
                   <div key=${step3Key} style="display:none">
