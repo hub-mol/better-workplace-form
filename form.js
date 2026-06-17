@@ -1,4 +1,4 @@
-// build: 2026-06-10
+// build: 2026-06-17
 
 import { html, render, useState, useEffect, useCallback } from "https://unpkg.com/htm/preact/standalone.module.js";
 
@@ -562,7 +562,7 @@ function scrollToForm() {
 
 // ─── app ─────────────────────────────────────────────────────────────────────
 
-function App({ noTabs = false }) {
+function App({ noTabs = false, mountId }) {
   const [step, setStep] = useState(1);
   const [data, setData] = useState({
     first_name: "",
@@ -632,11 +632,12 @@ function App({ noTabs = false }) {
   // Tell the parent iframe how tall we are so it can resize
   // documentElement always reports the viewport height (Webflow's CSS), so we
   // measure the actual mount node instead.
-  const formHeight = () => document.getElementById(noTabs ? "app-no-tabs" : "app")?.scrollHeight ?? document.documentElement.scrollHeight;
+  const rootId = mountId ?? (noTabs ? "app-no-tabs" : "app");
+  const formHeight = () => document.getElementById(rootId)?.scrollHeight ?? document.documentElement.scrollHeight;
 
   useEffect(() => {
     if (typeof ResizeObserver === "undefined" || window === window.parent) return;
-    const target = document.getElementById(noTabs ? "app-no-tabs" : "app") ?? document.documentElement;
+    const target = document.getElementById(rootId) ?? document.documentElement;
     const obs = new ResizeObserver(() => {
       window.parent.postMessage({ type: "bwp:resize", height: formHeight() }, "*");
     });
@@ -1018,15 +1019,17 @@ function App({ noTabs = false }) {
 export function initForm() {
   const el = document.getElementById("app");
   const elNoTabs = document.getElementById("app-no-tabs");
+  const elDaily = document.getElementById("app-dailyfruits"); // themed variant — colors via scoped CSS on the page
   if (el) render(html`<${App} />`, el);
   if (elNoTabs) render(html`<${App} noTabs=${true} />`, elNoTabs);
+  if (elDaily) render(html`<${App} noTabs=${true} mountId="app-dailyfruits" />`, elDaily);
 }
 
 export function destroyForm() {
-  const el = document.getElementById("app");
-  const elNoTabs = document.getElementById("app-no-tabs");
-  if (el) render(null, el);
-  if (elNoTabs) render(null, elNoTabs);
+  for (const id of ["app", "app-no-tabs", "app-dailyfruits"]) {
+    const el = document.getElementById(id);
+    if (el) render(null, el);
+  }
 }
 
 initForm();
