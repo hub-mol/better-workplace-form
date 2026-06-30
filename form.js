@@ -327,7 +327,7 @@ function Field({ id, label, required, error, noIcon, children }) {
       </label>
       ${children}
       ${!noIcon &&
-      html`
+    html`
         <div class="form_validation-error-icon" style=${{ visibility: error ? "visible" : "hidden" }}>
           <svg
             data-wf--better-workplace--icon--variant="md"
@@ -411,9 +411,8 @@ function Step2({ data, errors, onChange, onBlur, onNipLookup, nipLoading, nipErr
         </div>
       </div>
 
-      ${
-        nipError &&
-        html`
+      ${nipError &&
+    html`
           <div
             data-wf--better-workplace--system-box--variant="error"
             class="better-workplace--info-callout w-variant-cebccc58-4999-fc0e-403f-40fd53f94f9e"
@@ -426,11 +425,10 @@ function Step2({ data, errors, onChange, onBlur, onNipLookup, nipLoading, nipErr
             <div class="better-workplace--info-callout-text"><p>${nipError}</p></div>
           </div>
         `
-      }
+    }
 
-      ${
-        !nipFilled &&
-        html`
+      ${!nipFilled &&
+    html`
           <div data-wf--better-workplace--system-box--variant="info" class="better-workplace--info-callout">
             <div>
               <svg viewBox="0 0 24 24" class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f">
@@ -442,11 +440,10 @@ function Step2({ data, errors, onChange, onBlur, onNipLookup, nipLoading, nipErr
             </div>
           </div>
         `
-      }
+    }
 
-      ${
-        nipFilled &&
-        html`
+      ${nipFilled &&
+    html`
         <div class="grid-2-1 gap-xs">
           <${Field} id="company_name" label=${COPY.labels.company_name} required error=${errors.company_name}>
             <input class=${"form_input w-input" + (errors.company_name ? " is-validation-error" : "")}
@@ -501,7 +498,7 @@ function Step2({ data, errors, onChange, onBlur, onNipLookup, nipLoading, nipErr
           </div>
         </div>
       `
-      }
+    }
     </fieldset>
   `;
 }
@@ -527,7 +524,7 @@ ${data.f_message}</textarea
         >
       </div>
       ${marketing &&
-      html`
+    html`
         <label class="w-checkbox form_checkbox">
           <div class="w-checkbox-input w-checkbox-input--inputType-custom form_checkbox-icon"></div>
           <input type="checkbox" id="agreemrk" name="agreemrk" data-name="agreemrk" style="opacity:0;position:absolute;z-index:-1" />
@@ -554,7 +551,7 @@ function scrollToForm() {
     try {
       const top = window.parent.scrollY + (window.frameElement?.getBoundingClientRect().top ?? 0) - offset;
       window.parent.scrollTo({ left: 0, top, behavior: "smooth" });
-    } catch {}
+    } catch { }
   } else {
     window.scrollTo({ left: rect.left, top: rect.top + window.scrollY - offset, behavior: "smooth" });
   }
@@ -630,7 +627,7 @@ function App({ noTabs = false, mountId }) {
   }, []);
 
   // Tell the parent iframe how tall we are so it can resize
-  // documentElement always reports the viewport height (Webflow's CSS), so we
+  // documentElement always reports the viewport height, so we
   // measure the actual mount node instead.
   const rootId = mountId ?? (noTabs ? "app-no-tabs" : "app");
   const formHeight = () => document.getElementById(rootId)?.scrollHeight ?? document.documentElement.scrollHeight;
@@ -718,7 +715,7 @@ function App({ noTabs = false, mountId }) {
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
-      if (data.website) return; // honeypot — cicha blokada
+      if (data.website) return; // honeypot
       log("submit", data);
 
       const formEl = e.target;
@@ -768,7 +765,7 @@ function App({ noTabs = false, mountId }) {
           }
           if (noTabs) window.scrollTo({ top: 0, behavior: "smooth" });
           window.dataLayer = window.dataLayer || [];
-          window.dataLayer.push({ event: "form_success", formID: "zapytanie" });
+          window.dataLayer.push({ event: "form_success", formID: "zapytanie", url: data.url, brand: data.brand });
           log("submit success");
         } else {
           if (failEl) failEl.style.display = "block";
@@ -785,9 +782,9 @@ function App({ noTabs = false, mountId }) {
   const requiredForNav = noTabs ? [...(STEP_REQUIRED[1] || []), ...(STEP_REQUIRED[2] || [])] : STEP_REQUIRED[step] || [];
   const canProceed = STRICT_NAV
     ? requiredForNav.every((f) => {
-        const v = String(data[f] ?? "").trim();
-        return v.length > 0 && validateField(f, v) === null;
-      })
+      const v = String(data[f] ?? "").trim();
+      return v.length > 0 && validateField(f, v) === null;
+    })
     : !requiredForNav.some((f) => errors[f]);
   const stepWidths = noTabs ? [] : [1, 2, 3].map((s) => calcStepProgress(s, step, data, agreemrkChecked, done, marketing));
 
@@ -806,7 +803,7 @@ function App({ noTabs = false, mountId }) {
           onSubmit=${handleSubmit}
         >
           ${noTabs
-            ? html`
+      ? html`
                 <${Step1} data=${data} errors=${errors} onChange=${onChange} onBlur=${onBlur} />
                 <${Step2}
                   data=${data}
@@ -828,10 +825,10 @@ function App({ noTabs = false, mountId }) {
                   <input type="hidden" name="fbclid" value=${data.fbclid} />
                 </div>
               `
-            : html`
+      : html`
                 ${step === 1 && html`<${Step1} data=${data} errors=${errors} onChange=${onChange} onBlur=${onBlur} />`}
                 ${step === 2 &&
-                html`
+        html`
                   <${Step2}
                     data=${data}
                     errors=${errors}
@@ -845,7 +842,7 @@ function App({ noTabs = false, mountId }) {
                 `}
                 ${step === 3 && html`<${Step3} data=${data} onChange=${onChange} company=${company} marketing=${marketing} />`}
                 ${step === 3 &&
-                html`
+        html`
                   <div key=${step3Key} style="display:none">
                     <input type="hidden" name="first_name" value=${data.first_name} />
                     <input type="hidden" name="last_name" value=${data.last_name} />
@@ -869,9 +866,9 @@ function App({ noTabs = false, mountId }) {
           <div class="form-nav">
             <div class="form-nav_left">
               ${!noTabs &&
-              step > 1 &&
-              (ARROW_BTN
-                ? html`
+    step > 1 &&
+    (ARROW_BTN
+      ? html`
                     <button
                       type="button"
                       onClick=${goBack}
@@ -893,18 +890,18 @@ function App({ noTabs = false, mountId }) {
                       </div>
                     </button>
                   `
-                : html` <button type="button" class="button is-secondary" onClick=${goBack}>${COPY.buttons.back}</button> `)}
+      : html` <button type="button" class="button is-secondary" onClick=${goBack}>${COPY.buttons.back}</button> `)}
             </div>
             <div class="form-nav_right">
               ${!noTabs &&
-              step < 3 &&
-              (ARROW_BTN
-                ? html`
+    step < 3 &&
+    (ARROW_BTN
+      ? html`
                     <button
                       type="button"
                       onClick=${goNext}
                       class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" +
-                      (!canProceed ? " is-inactive" : "")}
+        (!canProceed ? " is-inactive" : "")}
                     >
                       <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
                         <div data-button="padding" class="better-workplace--button_layout">
@@ -923,18 +920,18 @@ function App({ noTabs = false, mountId }) {
                       </div>
                     </button>
                   `
-                : html`
+      : html`
                     <button type="button" class=${"button" + (!canProceed ? " is-inactive" : "")} onClick=${goNext}>
                       ${COPY.buttons.next}
                     </button>
                   `)}
               ${(noTabs || step === 3) &&
-              (ARROW_BTN
-                ? html`
+    (ARROW_BTN
+      ? html`
                     <button
                       type="submit"
                       class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" +
-                      (!canProceed ? " is-inactive" : "")}
+        (!canProceed ? " is-inactive" : "")}
                     >
                       <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
                         <div data-button="padding" class="better-workplace--button_layout">
@@ -956,7 +953,7 @@ function App({ noTabs = false, mountId }) {
                       </div>
                     </button>
                   `
-                : html`<button type="submit" class=${"button" + (!canProceed ? " is-inactive" : "")}>${COPY.buttons.submit}</button>`)}
+      : html`<button type="submit" class=${"button" + (!canProceed ? " is-inactive" : "")}>${COPY.buttons.submit}</button>`)}
             </div>
           </div>
 
