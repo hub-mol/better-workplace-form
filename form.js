@@ -661,7 +661,9 @@ function App({ noTabs = false, mountId }) {
         const input = label.closest(".form_field-wrapper")?.querySelector(".form_input");
         if (!input) return;
         // label is position:absolute on these forms, so its box hugs the text (+ its padding)
-        input.style.setProperty("--cutout-width", ((label.getBoundingClientRect().width / rootPx) * 0.875).toFixed(3) + "em");
+        let em = (label.getBoundingClientRect().width / rootPx) * 0.875;
+        if (!label.querySelector(".form_required")) em += 1; // optional labels ("(opcjonalnie)", no asterisk) get extra room
+        input.style.setProperty("--cutout-width", em.toFixed(3) + "em");
       });
     };
     apply();
