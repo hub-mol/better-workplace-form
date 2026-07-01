@@ -809,7 +809,7 @@ function App({ noTabs = false, mountId }) {
   const stepWidths = noTabs ? [] : [1, 2, 3].map((s) => calcStepProgress(s, step, data, agreemrkChecked, done, marketing));
 
   return html`
-    <div class="card padding-xl grid-1">
+    <div class="padding-xl grid-1">
       <div id="form-component" class="form_component w-form">
         ${!noTabs && html`<${StepIndicator} widths=${stepWidths} />`}
 
