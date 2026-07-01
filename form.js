@@ -363,7 +363,7 @@ function Step1({ data, errors, onChange, onBlur }) {
   `;
   return html`
     <fieldset class="flex-col gap-xs form-step">
-      <div><legend class="heading-style-h5">${COPY.headings.step1}</legend></div>
+      <div><legend class="heading-style-h5 text-color-card-heading">${COPY.headings.step1}</legend></div>
       <div class="grid-2 gap-xs">
         <${Field} id="first_name" label=${COPY.labels.first_name} required error=${errors.first_name}>
           ${input("first_name", "text", "given-name", COPY.placeholders.first_name)}
@@ -385,7 +385,7 @@ function Step1({ data, errors, onChange, onBlur }) {
 function Step2({ data, errors, onChange, onBlur, onNipLookup, nipLoading, nipError, nipFilled }) {
   return html`
     <fieldset class="flex-col gap-xs form-step">
-      <div><legend class="heading-style-h5">${COPY.headings.step2}</legend></div>
+      <div><legend class="heading-style-h5 text-color-card-heading">${COPY.headings.step2}</legend></div>
 
       <div class="grid-2 gap-xs">
         <${Field} id="tax_number" label=${COPY.labels.tax_number} required error=${errors.tax_number}>
@@ -507,7 +507,7 @@ function Step3({ data, onChange, company, marketing }) {
   return html`
     <fieldset class="flex-col gap-xs form-step">
       <div>
-        <legend class="heading-style-h5">${COPY.headings.step3}</legend>
+        <legend class="heading-style-h5 text-color-card-heading">${COPY.headings.step3}</legend>
       </div>
       <div class="form_field-wrapper">
         <label for="f_message" class="form_field-label">${COPY.labels.f_message}</label>
@@ -982,7 +982,7 @@ function App({ noTabs = false, mountId }) {
               class="better-workplace--form_message_img"
             />
             <div class="better-workplace--form_message_text flex-col gap-xs">
-              <p class="better-workplace--heading-style-h5">Dziękujemy!<br />Twoje zapytanie zostało wysłane.</p>
+              <p class="heading-style-h5 text-color-card-heading">Dziękujemy!<br />Twoje zapytanie zostało wysłane.</p>
               <p class="better-workplace--text-size-md">
                 Nasz konsultant skontaktuje się z Tobą w ciągu 24h (dni robocze), aby omówić szczegóły dostępnej oferty.
               </p>
