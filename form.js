@@ -648,6 +648,26 @@ function App({ noTabs = false, mountId }) {
     window.parent.postMessage({ type: "bwp:resize", height: formHeight() }, "*");
   }, [nipFilled, nipError]);
 
+  // Measure each field label and expose its width (in em) on the paired input as
+  // --cutout-width, so the input's clip-path can notch its border to fit the label.
+  // Skipped for dailyfruits, which uses a label-above layout instead of the notch.
+  useEffect(() => {
+    if (rootId === "app-dailyfruits") return;
+    const root = document.getElementById(rootId);
+    if (!root) return;
+    const apply = () => {
+      const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      root.querySelectorAll(".form_field-label").forEach((label) => {
+        const input = label.closest(".form_field-wrapper")?.querySelector(".form_input");
+        if (!input) return;
+        // label is position:absolute on these forms, so its box hugs the text (+ its padding)
+        input.style.setProperty("--cutout-width", ((label.getBoundingClientRect().width / rootPx) * 0.875).toFixed(3) + "em");
+      });
+    };
+    apply();
+    document.fonts?.ready.then(apply); // re-measure once the Webflow web font loads (shifts label width)
+  }, [step, nipFilled, noTabs]);
+
   // Śledź stan checkboxa agreemrk (kontrolowanego przez Webflow.js)
   useEffect(() => {
     if (!noTabs && step !== 3) return;
