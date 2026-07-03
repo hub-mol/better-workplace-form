@@ -105,12 +105,14 @@
                 align-items: flex-end;
                 height: 100%;
             }
-            /* „Pobierz dane" — kolor głównego przycisku */
-            #app-dailyfruits .form_nip .better-workplace--button {
+            /* każdy przycisk w apce — kolor głównego przycisku */
+            #app-dailyfruits .better-workplace--button {
                 background-color: #8dc63f;
                 border-radius: 999px;
             }
-            #app-dailyfruits .form_nip .better-workplace--button_text {
+            #app-dailyfruits .better-workplace--button_text,
+            #app-dailyfruits .better-workplace--button_text span,
+            #app-dailyfruits .better-workplace--icon-svg {
                 color: #1b5e3a;
             }
             /* callout NIP (wariant „info") — w kolorze brand (zielony) */
@@ -119,18 +121,8 @@
                 border-left-color: #8dc63f;
                 color: #1b5e3a;
             }
-            /* przycisk „Chcę otrzymać ofertę!" — jasnozielony, ciemny napis, zaokrąglony */
-            #app-dailyfruits button[type="submit"] .better-workplace--button {
-                background-color: #8dc63f;
-                border-radius: 999px;
-            }
-            #app-dailyfruits button[type="submit"] .better-workplace--button_text,
-            #app-dailyfruits button[type="submit"] .better-workplace--button_text span,
-            #app-dailyfruits button[type="submit"] .better-workplace--icon-svg {
-                color: #1b5e3a;
-            }
             /* fallback dla prostego przycisku (ARROW_BTN = false) */
-            #app-dailyfruits button[type="submit"].button {
+            #app-dailyfruits button.button {
                 background-color: #8dc63f;
                 color: #1b5e3a;
                 border-radius: 999px;

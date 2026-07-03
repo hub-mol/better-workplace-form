@@ -810,6 +810,97 @@ function App({ noTabs = false, mountId }) {
     : !requiredForNav.some((f) => errors[f]);
   const stepWidths = noTabs ? [] : [1, 2, 3].map((s) => calcStepProgress(s, step, data, agreemrkChecked, done, marketing));
 
+  const backBtn =
+    !noTabs &&
+    step > 1 &&
+    (ARROW_BTN
+      ? html`
+          <button
+            type="button"
+            onClick=${goBack}
+            class="better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block"
+          >
+            <div class="better-workplace--button w-variant-e5b64a72-f673-3169-40ad-1f06b1232785">
+              <div class="better-workplace--button_layout">
+                <div class="better-workplace--button_relative">
+                  <svg
+                    data-wf--better-workplace--icon--variant="md"
+                    viewBox="0 0 24 24"
+                    class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
+                  >
+                    <use href="#arrow-left" viewBox="0 0 32 32"></use>
+                  </svg>
+                </div>
+                <div data-button="text" class="better-workplace--button_text">${COPY.buttons.back}</div>
+              </div>
+            </div>
+          </button>
+        `
+      : html` <button type="button" class="button is-secondary" onClick=${goBack}>${COPY.buttons.back}</button> `);
+
+  const nextBtn =
+    !noTabs &&
+    step < 3 &&
+    (ARROW_BTN
+      ? html`
+          <button
+            type="button"
+            onClick=${goNext}
+            class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" +
+            (!canProceed ? " is-inactive" : "")}
+          >
+            <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
+              <div data-button="padding" class="better-workplace--button_layout">
+                <div class="better-workplace--button_text">${COPY.buttons.next}</div>
+                <div class="better-workplace--button_relative">
+                  <svg
+                    data-wf--better-workplace--icon--variant="md"
+                    viewBox="0 0 24 24"
+                    class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
+                  >
+                    <use href="#arrow-right" viewBox="0 0 32 32"></use>
+                  </svg>
+                  <div data-button="circle" class="better-workplace--button_icon-bg"></div>
+                </div>
+              </div>
+            </div>
+          </button>
+        `
+      : html`
+          <button type="button" class=${"button" + (!canProceed ? " is-inactive" : "")} onClick=${goNext}>${COPY.buttons.next}</button>
+        `);
+
+  const submitBtn =
+    (noTabs || step === 3) &&
+    (ARROW_BTN
+      ? html`
+          <button
+            type="submit"
+            class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" +
+            (!canProceed ? " is-inactive" : "")}
+          >
+            <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
+              <div data-button="padding" class="better-workplace--button_layout">
+                <div class="better-workplace--button_text">
+                  <span class="hide-mobile-portrait">${COPY.buttons.submit}</span>
+                  <span class="show-mobile">${COPY.buttons.shortsubmit}</span>
+                </div>
+                <div class="better-workplace--button_relative">
+                  <svg
+                    data-wf--better-workplace--icon--variant="md"
+                    viewBox="0 0 24 24"
+                    class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
+                  >
+                    <use href="#mail" viewBox="0 0 32 32"></use>
+                  </svg>
+                  <div data-button="circle" class="better-workplace--button_icon-bg"></div>
+                </div>
+              </div>
+            </div>
+          </button>
+        `
+      : html`<button type="submit" class=${"button" + (!canProceed ? " is-inactive" : "")}>${COPY.buttons.submit}</button>`);
+
   return html`
     <div class="padding-xl grid-1">
       <div id="form-component" class="form_component w-form">
@@ -886,97 +977,12 @@ function App({ noTabs = false, mountId }) {
               `}
 
           <div class="form-nav">
-            <div class="form-nav_left">
-              ${!noTabs &&
-    step > 1 &&
-    (ARROW_BTN
-      ? html`
-                    <button
-                      type="button"
-                      onClick=${goBack}
-                      class="better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block"
-                    >
-                      <div class="better-workplace--button w-variant-e5b64a72-f673-3169-40ad-1f06b1232785">
-                        <div class="better-workplace--button_layout">
-                          <div class="better-workplace--button_relative">
-                            <svg
-                              data-wf--better-workplace--icon--variant="md"
-                              viewBox="0 0 24 24"
-                              class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
-                            >
-                              <use href="#arrow-left" viewBox="0 0 32 32"></use>
-                            </svg>
-                          </div>
-                          <div data-button="text" class="better-workplace--button_text">${COPY.buttons.back}</div>
-                        </div>
-                      </div>
-                    </button>
-                  `
-      : html` <button type="button" class="button is-secondary" onClick=${goBack}>${COPY.buttons.back}</button> `)}
-            </div>
-            <div class="form-nav_right">
-              ${!noTabs &&
-    step < 3 &&
-    (ARROW_BTN
-      ? html`
-                    <button
-                      type="button"
-                      onClick=${goNext}
-                      class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" +
-        (!canProceed ? " is-inactive" : "")}
-                    >
-                      <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
-                        <div data-button="padding" class="better-workplace--button_layout">
-                          <div class="better-workplace--button_text">${COPY.buttons.next}</div>
-                          <div class="better-workplace--button_relative">
-                            <svg
-                              data-wf--better-workplace--icon--variant="md"
-                              viewBox="0 0 24 24"
-                              class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
-                            >
-                              <use href="#arrow-right" viewBox="0 0 32 32"></use>
-                            </svg>
-                            <div data-button="circle" class="better-workplace--button_icon-bg"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  `
-      : html`
-                    <button type="button" class=${"button" + (!canProceed ? " is-inactive" : "")} onClick=${goNext}>
-                      ${COPY.buttons.next}
-                    </button>
-                  `)}
-              ${(noTabs || step === 3) &&
-    (ARROW_BTN
-      ? html`
-                    <button
-                      type="submit"
-                      class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" +
-        (!canProceed ? " is-inactive" : "")}
-                    >
-                      <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
-                        <div data-button="padding" class="better-workplace--button_layout">
-                          <div class="better-workplace--button_text">
-                            <span class="hide-mobile-portrait">${COPY.buttons.submit}</span>
-                            <span class="show-mobile">${COPY.buttons.shortsubmit}</span>
-                          </div>
-                          <div class="better-workplace--button_relative">
-                            <svg
-                              data-wf--better-workplace--icon--variant="md"
-                              viewBox="0 0 24 24"
-                              class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
-                            >
-                              <use href="#mail" viewBox="0 0 32 32"></use>
-                            </svg>
-                            <div data-button="circle" class="better-workplace--button_icon-bg"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  `
-      : html`<button type="submit" class=${"button" + (!canProceed ? " is-inactive" : "")}>${COPY.buttons.submit}</button>`)}
-            </div>
+            ${noTabs
+              ? submitBtn
+              : html`
+                  <div class="form-nav_left">${backBtn}</div>
+                  <div class="form-nav_right">${nextBtn}${submitBtn}</div>
+                `}
           </div>
 
           <div class="hide">
