@@ -882,8 +882,8 @@ function App({ noTabs = false, mountId }) {
             <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
               <div data-button="padding" class="better-workplace--button_layout">
                 <div class="better-workplace--button_text">
-                  <span class="hide-mobile-portrait">${COPY.buttons.submit}</span>
-                  <span class="show-mobile">${COPY.buttons.shortsubmit}</span>
+                  <span class="hide-mobile-tiny">${COPY.buttons.submit}</span>
+                  <span class="show-mobile-tiny">${COPY.buttons.shortsubmit}</span>
                 </div>
                 <div class="better-workplace--button_relative">
                   <svg
