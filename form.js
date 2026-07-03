@@ -84,7 +84,7 @@ const COPY = {
     back: "Wstecz",
     next: "Dalej",
     submit: "Chcę otrzymać ofertę!",
-    shortsubmit: "Wyślij!",
+    shortsubmit: "Zapytaj o ofertę",
   },
   legal: {
     newsletter: (company) => `Chcę otrzymywać od ${company || DEFAULT_COMPANY} newslettera o tematyce benefitów pozapłacowych`,
