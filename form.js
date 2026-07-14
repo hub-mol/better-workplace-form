@@ -1,6 +1,6 @@
 // build: 2026-06-17
 
-import { html, render, useState, useEffect, useCallback } from "https://unpkg.com/htm/preact/standalone.module.js";
+import { html, render, useState, useEffect, useCallback, useRef } from "https://unpkg.com/htm/preact/standalone.module.js";
 
 const DEBUG = new URL(import.meta.url).searchParams.has("debug");
 const log = (...args) => DEBUG && console.log("[bwp]", ...args);
@@ -345,6 +345,22 @@ function Field({ id, label, required, error, noIcon, children }) {
   `;
 }
 
+// inline-flex so consecutive <Fact>s sit side by side and wrap to their own line
+// on narrow viewports, same as inline text — no extra wrapper markup needed.
+function Fact({ children }) {
+  return html`
+    <div style=${{ display: "inline-flex", alignItems: "center", gap: "8px", marginRight: "32px", color: "#553935" }}>
+      <img
+        src="https://storage.mlcdn.com/account_image/2386501/cDXTXt7E1ySgctVKMzB97jZ17jFnktmWCNLgiAkH.png"
+        width="32"
+        height="32"
+        alt=""
+      />
+      <span>${children}</span>
+    </div>
+  `;
+}
+
 function Step1({ data, errors, onChange, onBlur }) {
   const input = (name, type, autocomplete, placeholder) => html`
     <input
@@ -589,6 +605,7 @@ function App({ noTabs = false, mountId }) {
   const [nipFilled, setNipFilled] = useState(false);
   const [agreemrkChecked, setAgreemrkChecked] = useState(false);
   const [done, setDone] = useState(false);
+  const submittingRef = useRef(false);
   const [company, setCompany] = useState("");
   const [marketing, setMarketing] = useState(false);
 
@@ -737,7 +754,12 @@ function App({ noTabs = false, mountId }) {
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
+      e.stopPropagation(); // this form uses Webflow's own .w-form/data-name markup for its CSS,
+      // which means Webflow's native runtime also auto-binds a submit handler to it —
+      // without this, that handler independently double-posts the same submission
       if (data.website) return; // honeypot
+      if (submittingRef.current) return; // drugi klik, gdy POST jeszcze w locie
+      submittingRef.current = true;
       log("submit", data);
 
       const formEl = e.target;
@@ -796,6 +818,8 @@ function App({ noTabs = false, mountId }) {
       } catch (err) {
         if (failEl) failEl.style.display = "block";
         log("submit exception", err.message);
+      } finally {
+        submittingRef.current = false; // po błędzie pozwól spróbować ponownie
       }
     },
     [data, agreemrkChecked],
