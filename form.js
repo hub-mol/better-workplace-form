@@ -1,9 +1,14 @@
-// build: 2026-06-17
+// build: 2026-07-15
 
 import { html, render, useState, useEffect, useCallback, useRef } from "https://unpkg.com/htm/preact/standalone.module.js";
 
 const DEBUG = new URL(import.meta.url).searchParams.has("debug");
 const log = (...args) => DEBUG && console.log("[bwp]", ...args);
+
+// ─── form.config ─────────────────────────────────────────────────────────────
+// Cała konfiguracja formularza: kroki, pola, komunikaty, przełączniki.
+// Docelowo do wydzielenia jako form.config.js — na razie inline, żeby strona
+// ładowała jeden skrypt. Poniżej tej sekcji zaczyna się silnik.
 
 // Only business emails allowed
 const PERSONAL_EMAIL_DOMAINS = [
@@ -18,8 +23,6 @@ const PERSONAL_EMAIL_DOMAINS = [
   "outlook.com",
   "protonmail.com",
 ];
-
-// ─── copy ────────────────────────────────────────────────────────────────────
 
 // shown in the step-3 consent text unless overridden via the `company` embed param
 const DEFAULT_COMPANY = "Betterworkplace Sp. z o.o.";
@@ -95,8 +98,6 @@ const COPY = {
   },
 };
 
-// ─── config ───────────────────────────────────────────────────────────────────
-
 const WEBFLOW_SITE_ID = "698dfabcdd705500e5451b80";
 
 const STEPS = [
@@ -118,6 +119,8 @@ const STRICT_NAV = true;
 // true  = przyciski w stylu Webflow arrow (better-workplace--button-component)
 // false = proste przyciski (button / button is-secondary)
 const ARROW_BTN = true;
+
+// ─── koniec form.config — dalej silnik ───────────────────────────────────────
 
 // ─── phone ───────────────────────────────────────────────────────────────────
 
@@ -341,22 +344,6 @@ function Field({ id, label, required, error, noIcon, children }) {
       <span aria-live="polite" class="form_validation-error-text" style=${{ visibility: error ? "visible" : "hidden" }}>
         ${error || ""}
       </span>
-    </div>
-  `;
-}
-
-// inline-flex so consecutive <Fact>s sit side by side and wrap to their own line
-// on narrow viewports, same as inline text — no extra wrapper markup needed.
-function Fact({ children }) {
-  return html`
-    <div style=${{ display: "inline-flex", alignItems: "center", gap: "8px", marginRight: "32px", color: "#553935" }}>
-      <img
-        src="https://storage.mlcdn.com/account_image/2386501/cDXTXt7E1ySgctVKMzB97jZ17jFnktmWCNLgiAkH.png"
-        width="32"
-        height="32"
-        alt=""
-      />
-      <span>${children}</span>
     </div>
   `;
 }
@@ -605,6 +592,7 @@ function App({ noTabs = false, mountId }) {
   const [nipFilled, setNipFilled] = useState(false);
   const [agreemrkChecked, setAgreemrkChecked] = useState(false);
   const [done, setDone] = useState(false);
+  const [failed, setFailed] = useState(false);
   const submittingRef = useRef(false);
   const [company, setCompany] = useState("");
   const [marketing, setMarketing] = useState(false);
@@ -760,12 +748,8 @@ function App({ noTabs = false, mountId }) {
       if (data.website) return; // honeypot
       if (submittingRef.current) return; // drugi klik, gdy POST jeszcze w locie
       submittingRef.current = true;
+      setFailed(false);
       log("submit", data);
-
-      const formEl = e.target;
-      const wrapper = document.getElementById("form-component");
-      const successEl = wrapper?.querySelector(".w-form-done");
-      const failEl = wrapper?.querySelector(".w-form-fail");
 
       try {
         const res = await fetch(`https://webflow.com/api/v1/form/${WEBFLOW_SITE_ID}`, {
@@ -802,21 +786,17 @@ function App({ noTabs = false, mountId }) {
         });
 
         if (res.ok) {
-          if (formEl) formEl.style.display = "none";
-          if (successEl) {
-            successEl.style.display = "block";
-            setDone(true);
-          }
+          setDone(true); // stan steruje widocznością form/success — patrz render
           if (noTabs) window.scrollTo({ top: 0, behavior: "smooth" });
           window.dataLayer = window.dataLayer || [];
           window.dataLayer.push({ event: "form_success", formID: "zapytanie", url: data.url, brand: data.brand });
           log("submit success");
         } else {
-          if (failEl) failEl.style.display = "block";
+          setFailed(true);
           log("submit error", res.status);
         }
       } catch (err) {
-        if (failEl) failEl.style.display = "block";
+        setFailed(true);
         log("submit exception", err.message);
       } finally {
         submittingRef.current = false; // po błędzie pozwól spróbować ponownie
@@ -937,6 +917,7 @@ function App({ noTabs = false, mountId }) {
           method="post"
           novalidate
           class="flex-col gap-md"
+          style=${{ display: done ? "none" : "" }}
           onSubmit=${handleSubmit}
         >
           ${noTabs
@@ -1024,7 +1005,13 @@ function App({ noTabs = false, mountId }) {
           />
         </form>
 
-        <div class="form_message-success w-form-done" tabindex="-1" role="region" aria-label="zapytanie success" style="display:none">
+        <div
+          class="form_message-success w-form-done"
+          tabindex="-1"
+          role="region"
+          aria-label="zapytanie success"
+          style=${{ display: done ? "block" : "none" }}
+        >
           <div data-wf--better-workplace--form-success-error-message--form-type="zapytanie" class="better-workplace--form_message">
             <img
               width="200"
@@ -1042,7 +1029,13 @@ function App({ noTabs = false, mountId }) {
           </div>
         </div>
 
-        <div class="form_message-error w-form-fail" tabindex="-1" role="region" aria-label="zapytanie failure" style="display:none">
+        <div
+          class="form_message-error w-form-fail"
+          tabindex="-1"
+          role="region"
+          aria-label="zapytanie failure"
+          style=${{ display: failed ? "block" : "none" }}
+        >
           <div
             data-wf--better-workplace--system-box--variant="error"
             class="better-workplace--info-callout w-variant-cebccc58-4999-fc0e-403f-40fd53f94f9e"
@@ -1065,13 +1058,22 @@ function App({ noTabs = false, mountId }) {
   `;
 }
 
+// Na obcych stronach (embed) inne skrypty potrafią zmutować DOM w kontenerze,
+// a podwójne załadowanie modułu — zamontować drugą kopię. Zerujemy kontener
+// przed każdym renderem, żeby diff Preacta zawsze startował od czystego DOM.
+function mount(el, props) {
+  render(null, el);
+  el.replaceChildren();
+  render(html`<${App} ...${props} />`, el);
+}
+
 export function initForm() {
   const el = document.getElementById("app");
   const elNoTabs = document.getElementById("app-no-tabs");
   const elDaily = document.getElementById("app-dailyfruits"); // themed variant — colors via scoped CSS on the page
-  if (el) render(html`<${App} />`, el);
-  if (elNoTabs) render(html`<${App} noTabs=${true} />`, elNoTabs);
-  if (elDaily) render(html`<${App} noTabs=${true} mountId="app-dailyfruits" />`, elDaily);
+  if (el) mount(el, {});
+  if (elNoTabs) mount(elNoTabs, { noTabs: true });
+  if (elDaily) mount(elDaily, { noTabs: true, mountId: "app-dailyfruits" });
 }
 
 export function destroyForm() {
