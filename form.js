@@ -1,16 +1,8 @@
-// build: 2026-07-15
-
 import { html, render, useState, useEffect, useCallback, useRef } from "https://unpkg.com/htm/preact/standalone.module.js";
 
-const DEBUG = new URL(import.meta.url).searchParams.has("debug");
+let DEBUG = new URL(import.meta.url).searchParams.has("debug");
 const log = (...args) => DEBUG && console.log("[bwp]", ...args);
 
-// ─── form.config ─────────────────────────────────────────────────────────────
-// Cała konfiguracja formularza: kroki, pola, komunikaty, przełączniki.
-// Docelowo do wydzielenia jako form.config.js — na razie inline, żeby strona
-// ładowała jeden skrypt. Poniżej tej sekcji zaczyna się silnik.
-
-// Only business emails allowed
 const PERSONAL_EMAIL_DOMAINS = [
   "gmail.com",
   "wp.pl",
@@ -24,7 +16,6 @@ const PERSONAL_EMAIL_DOMAINS = [
   "protonmail.com",
 ];
 
-// shown in the step-3 consent text unless overridden via the `company` embed param
 const DEFAULT_COMPANY = "Betterworkplace Sp. z o.o.";
 
 const COPY = {
@@ -112,17 +103,9 @@ const STEP_REQUIRED = {
   3: [],
 };
 
-// true  = Next nieaktywny dopóki wszystkie wymagane pola nie przejdą walidacji (live)
-// false = walidacja tylko po kliknięciu Next (poprzednie zachowanie)
 const STRICT_NAV = true;
 
-// true  = przyciski w stylu Webflow arrow (better-workplace--button-component)
-// false = proste przyciski (button / button is-secondary)
 const ARROW_BTN = true;
-
-// ─── koniec form.config — dalej silnik ───────────────────────────────────────
-
-// ─── phone ───────────────────────────────────────────────────────────────────
 
 // fixed: true = group subscriber digits in 3s; false = just separate CC from number
 const PHONE_CODES = {
@@ -177,8 +160,6 @@ function formatPhone(value) {
   if (!fixed) return `${prefix} ${sub}`;
   return `${prefix} ${(sub.match(/.{1,3}/g) || []).join(" ")}`;
 }
-
-// ─── validation ──────────────────────────────────────────────────────────────
 
 function nipChecksum(nip) {
   const d = nip.replace(/\D/g, "");
@@ -246,8 +227,6 @@ function validateStep(step, data) {
   return errors;
 }
 
-// ─── api ─────────────────────────────────────────────────────────────────────
-
 async function lookupNip(nip) {
   const digits = nip.replace(/\D/g, "");
   const res = await fetch(`https://n.betterworkplace.pl/webhook/webflow-nip?nip=${digits}`);
@@ -284,12 +263,9 @@ function extractUtm(url) {
   }
 }
 
-// ─── progress ────────────────────────────────────────────────────────────────
-
-// zwraca CSS width string: "X%", "0.675rem" (current + empty), lub "0"
 function calcStepProgress(stepNum, currentStep, data, agreemrkChecked, done, marketing = false) {
   if (done) return "100%";
-  if (stepNum > currentStep) return "0"; // next i dalsze: zawsze puste
+  if (stepNum > currentStep) return "0";
   const valid = (f) => {
     const v = String(data[f] ?? "").trim();
     return v.length > 0 && validateField(f, v) === null;
@@ -300,15 +276,12 @@ function calcStepProgress(stepNum, currentStep, data, agreemrkChecked, done, mar
   else if (stepNum === 2) n = ["tax_number", "company_name", "city", "company_workers"].filter(valid).length;
   else if (stepNum === 3) {
     const messageFilled = String(data.f_message ?? "").trim() ? 1 : 0;
-    // marketing checkbox shown only when explicitly enabled (default: hidden)
     n = marketing ? messageFilled + (agreemrkChecked ? 1 : 0) : messageFilled;
     mul = marketing ? 50 : 100;
   }
-  if (stepNum === currentStep) return n > 0 ? n * mul + "%" : "0.675rem"; // current: min wskaźnik
-  return n * mul + "%"; // past: rzeczywisty fill, może być 0%
+  if (stepNum === currentStep) return n > 0 ? n * mul + "%" : "0.675rem";
+  return n * mul + "%";
 }
-
-// ─── components ──────────────────────────────────────────────────────────────
 
 function LoadingBar({ width }) {
   return html`
@@ -542,8 +515,6 @@ ${data.f_message}</textarea
   `;
 }
 
-// ─── scroll ──────────────────────────────────────────────────────────────────
-
 function scrollToForm() {
   if (window.innerWidth >= 720) return;
   const el = document.getElementById("app") ?? document.getElementById("form-component");
@@ -560,9 +531,7 @@ function scrollToForm() {
   }
 }
 
-// ─── app ─────────────────────────────────────────────────────────────────────
-
-function App({ noTabs = false, mountId }) {
+function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAttr = false, brandAttr = "" }) {
   const [step, setStep] = useState(1);
   const [data, setData] = useState({
     first_name: "",
@@ -577,7 +546,7 @@ function App({ noTabs = false, mountId }) {
     f_message: "",
     agreemrk: false,
     url: "",
-    brand: "",
+    brand: brandAttr,
     referrer: "",
     utm_source: "",
     utm_medium: "",
@@ -594,8 +563,8 @@ function App({ noTabs = false, mountId }) {
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
   const submittingRef = useRef(false);
-  const [company, setCompany] = useState("");
-  const [marketing, setMarketing] = useState(false);
+  const [company, setCompany] = useState(companyAttr);
+  const [marketing, setMarketing] = useState(marketingAttr);
 
   // company/marketing overrides come from this page's own URL — works the same
   // whether we're standalone or the src= of an iframe (location is the iframe's own)
@@ -605,13 +574,13 @@ function App({ noTabs = false, mountId }) {
     if (params.has("marketing")) setMarketing(true);
   }, []);
 
-  // Get parent page URL and brand — via postMessage when in iframe, directly otherwise
   useEffect(() => {
     if (window === window.parent) {
       const href = window.location.href;
       const utm = extractUtm(href);
-      log("standalone mode", { url: href, brand: extractBrand(href), ...utm });
-      setData((prev) => ({ ...prev, url: href, brand: extractBrand(href), referrer: document.referrer, ...utm }));
+      const brand = brandAttr || extractBrand(href);
+      log("standalone mode", { url: href, brand, ...utm });
+      setData((prev) => ({ ...prev, url: href, brand, referrer: document.referrer, ...utm }));
       return;
     }
     const handler = (e) => {
@@ -621,7 +590,7 @@ function App({ noTabs = false, mountId }) {
       setData((prev) => ({
         ...prev,
         ...(e.data.url ? { url: e.data.url } : {}),
-        ...(e.data.brand ? { brand: e.data.brand } : e.data.url ? { brand: extractBrand(e.data.url) } : {}),
+        ...(brandAttr ? {} : e.data.brand ? { brand: e.data.brand } : e.data.url ? { brand: extractBrand(e.data.url) } : {}),
         ...(e.data.referrer ? { referrer: e.data.referrer } : {}),
         ...utm,
       }));
@@ -634,12 +603,11 @@ function App({ noTabs = false, mountId }) {
   // Tell the parent iframe how tall we are so it can resize
   // documentElement always reports the viewport height, so we
   // measure the actual mount node instead.
-  const rootId = mountId ?? (noTabs ? "app-no-tabs" : "app");
-  const formHeight = () => document.getElementById(rootId)?.scrollHeight ?? document.documentElement.scrollHeight;
+  const formHeight = () => document.getElementById("app")?.scrollHeight ?? document.documentElement.scrollHeight;
 
   useEffect(() => {
     if (typeof ResizeObserver === "undefined" || window === window.parent) return;
-    const target = document.getElementById(rootId) ?? document.documentElement;
+    const target = document.getElementById("app") ?? document.documentElement;
     const obs = new ResizeObserver(() => {
       window.parent.postMessage({ type: "bwp:resize", height: formHeight() }, "*");
     });
@@ -655,17 +623,16 @@ function App({ noTabs = false, mountId }) {
 
   // Measure each field label and expose its width (in em) on the paired input as
   // --cutout-width, so the input's clip-path can notch its border to fit the label.
-  // Skipped for dailyfruits, which uses a label-above layout instead of the notch.
+  // Skipped in label-above mode (data-form-label-above) — no notch to size there.
   useEffect(() => {
-    if (rootId === "app-dailyfruits") return;
-    const root = document.getElementById(rootId);
+    if (labelAbove) return;
+    const root = document.getElementById("app");
     if (!root) return;
     const apply = () => {
       const rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       root.querySelectorAll(".form_field-label").forEach((label) => {
         const input = label.closest(".form_field-wrapper")?.querySelector(".form_input");
         if (!input) return;
-        // label is position:absolute on these forms, so its box hugs the text (+ its padding)
         let em = (label.getBoundingClientRect().width / rootPx) * 0.875;
         if (!label.querySelector(".form_required")) em += 1; // optional labels ("(opcjonalnie)", no asterisk) get extra room
         input.style.setProperty("--cutout-width", em.toFixed(3) + "em");
@@ -675,7 +642,6 @@ function App({ noTabs = false, mountId }) {
     document.fonts?.ready.then(apply); // re-measure once the Webflow web font loads (shifts label width)
   }, [step, nipFilled, noTabs]);
 
-  // Śledź stan checkboxa agreemrk (kontrolowanego przez Webflow.js)
   useEffect(() => {
     if (!noTabs && step !== 3) return;
     const el = document.querySelector('input[name="agreemrk"]');
@@ -786,7 +752,7 @@ function App({ noTabs = false, mountId }) {
         });
 
         if (res.ok) {
-          setDone(true); // stan steruje widocznością form/success — patrz render
+          setDone(true);
           if (noTabs) window.scrollTo({ top: 0, behavior: "smooth" });
           window.dataLayer = window.dataLayer || [];
           window.dataLayer.push({ event: "form_success", formID: "zapytanie", url: data.url, brand: data.brand });
@@ -799,7 +765,7 @@ function App({ noTabs = false, mountId }) {
         setFailed(true);
         log("submit exception", err.message);
       } finally {
-        submittingRef.current = false; // po błędzie pozwól spróbować ponownie
+        submittingRef.current = false;
       }
     },
     [data, agreemrkChecked],
@@ -1069,18 +1035,20 @@ function mount(el, props) {
 
 export function initForm() {
   const el = document.getElementById("app");
-  const elNoTabs = document.getElementById("app-no-tabs");
-  const elDaily = document.getElementById("app-dailyfruits"); // themed variant — colors via scoped CSS on the page
-  if (el) mount(el, {});
-  if (elNoTabs) mount(elNoTabs, { noTabs: true });
-  if (elDaily) mount(elDaily, { noTabs: true, mountId: "app-dailyfruits" });
+  if (!el) return;
+  if ("formDebug" in el.dataset) DEBUG = true;
+  mount(el, {
+    noTabs: el.dataset.formSteps !== "true",
+    labelAbove: "formLabelAbove" in el.dataset,
+    companyAttr: el.dataset.formCompanyName || "",
+    marketingAttr: "formMarketing" in el.dataset,
+    brandAttr: el.dataset.formBrand || "",
+  });
 }
 
 export function destroyForm() {
-  for (const id of ["app", "app-no-tabs", "app-dailyfruits"]) {
-    const el = document.getElementById(id);
-    if (el) render(null, el);
-  }
+  const el = document.getElementById("app");
+  if (el) render(null, el);
 }
 
 initForm();

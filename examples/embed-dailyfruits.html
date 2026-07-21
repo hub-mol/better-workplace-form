@@ -66,63 +66,63 @@
                 transition: width 0.4s ease;
             }
 
-            /* ── Dailyfruits theme — scoped to the #app-dailyfruits mount ──── */
+            /* ── Dailyfruits theme — scoped to the #app mount ──── */
             /* tło formularza krem — .card to faktyczna powierzchnia formularza
-               (Webflow maluje ją na biało), #app-dailyfruits jako fallback */
-            #app-dailyfruits,
-            #app-dailyfruits .card {
+               (Webflow maluje ją na biało), #app jako fallback */
+            #app,
+            #app .card {
                 background-color: #fff9e0;
             }
             /* etykiety, nagłówki, tekst zgody — zielony */
-            #app-dailyfruits .form_field-label,
-            #app-dailyfruits .heading-style-h5,
-            #app-dailyfruits legend,
-            #app-dailyfruits .form_checkbox-label,
-            #app-dailyfruits p {
+            #app .form_field-label,
+            #app .heading-style-h5,
+            #app legend,
+            #app .form_checkbox-label,
+            #app p {
                 color: #1b5e3a;
             }
             /* inputy / selecty / textarea — białe tło */
-            #app-dailyfruits .form_input,
-            #app-dailyfruits .w-input,
-            #app-dailyfruits .w-select {
+            #app .form_input,
+            #app .w-input,
+            #app .w-select {
                 background-color: #ffffff;
                 color: #1b5e3a;
             }
             /* etykieta nad inputem, bez tła — domyślnie jest absolutna i nachodzi
                na obramowanie inputu; wracamy do normalnego flow */
-            #app-dailyfruits .form_field-wrapper {
+            #app .form_field-wrapper {
                 padding-top: 0;
             }
-            #app-dailyfruits .form_field-label {
+            #app .form_field-label {
                 position: static;
                 width: auto;
                 margin: 0 0 0.375rem;
                 background: transparent;
             }
             /* „Pobierz dane" wyrównany do dołu komórki (obok inputu NIP) */
-            #app-dailyfruits .form_nip {
+            #app .form_nip {
                 display: flex;
                 align-items: flex-end;
                 height: 100%;
             }
             /* każdy przycisk w apce — kolor głównego przycisku */
-            #app-dailyfruits .better-workplace--button {
+            #app .better-workplace--button {
                 background-color: #8dc63f;
                 border-radius: 999px;
             }
-            #app-dailyfruits .better-workplace--button_text,
-            #app-dailyfruits .better-workplace--button_text span,
-            #app-dailyfruits .better-workplace--icon-svg {
+            #app .better-workplace--button_text,
+            #app .better-workplace--button_text span,
+            #app .better-workplace--icon-svg {
                 color: #1b5e3a;
             }
             /* callout NIP (wariant „info") — w kolorze brand (zielony) */
-            #app-dailyfruits .better-workplace--info-callout[data-wf--better-workplace--system-box--variant="info"] {
+            #app .better-workplace--info-callout[data-wf--better-workplace--system-box--variant="info"] {
                 background-color: rgba(141, 198, 63, 0.18);
                 border-left-color: #8dc63f;
                 color: #1b5e3a;
             }
             /* fallback dla prostego przycisku (ARROW_BTN = false) */
-            #app-dailyfruits button.button {
+            #app button.button {
                 background-color: #8dc63f;
                 color: #1b5e3a;
                 border-radius: 999px;
@@ -152,7 +152,13 @@
             </symbol>
         </svg>
 
-        <div id="app-dailyfruits"></div>
+        <div
+            id="app"
+            data-form-label-above
+            data-form-company-name="Dailyfruits Sp. z o.o."
+            data-form-marketing
+            data-form-brand="Dailyfruits"
+        ></div>
 
         <script type="module" src="../form.js"></script>
     </body>

@@ -15,9 +15,32 @@ examples/
 The SVG sprite and styles are already on the Webflow page — you only need to add the script tag and a `div#app`:
 
 ```html
-<div id="app"></div>
+<div id="app" data-form-steps="true"></div>
 <script type="module" src="https://cdn.jsdelivr.net/gh/hub-mol/better-workplace-form@1.0/form.js"></script>
 ```
+
+### Form variants (attributes on `#app`)
+
+There is a single mount (`<div id="app">`); the variant is configured with data attributes:
+
+| Attribute                     | Effect                                                                                   |
+| ----------------------------- | ---------------------------------------------------------------------------------------- |
+| `data-form-steps="true"`      | 3-step form with a progress stepper. Without it, all fields render on one page.          |
+| `data-form-label-above`       | Label sits above the input (no border notch / `--cutout-width`). Style it via page CSS.  |
+| `data-form-company-name="…"`  | Company name in the consent texts. Default: "Betterworkplace Sp. z o.o.".                |
+| `data-form-marketing`         | Shows the newsletter opt-in checkbox. Hidden by default.                                 |
+| `data-form-brand="…"`         | Lead-attribution brand. Default: from `bwp:info` or the hostname.                        |
+| `data-form-debug`             | Enables `[bwp]` console logging.                                                         |
+
+Query params on the form's own URL (`?company=…`, `?marketing=1`) still work as per-embed overrides and win over the attributes.
+
+Migration from the old mount ids:
+
+| Old                          | New                                    |
+| ---------------------------- | -------------------------------------- |
+| `<div id="app">`             | `<div id="app" data-form-steps="true">` |
+| `<div id="app-no-tabs">`     | `<div id="app">`                        |
+| `<div id="app-dailyfruits">` | `<div id="app" data-form-label-above>` (theme CSS now scoped to `#app`) |
 
 ## Embedding on other pages
 
