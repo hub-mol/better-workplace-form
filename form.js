@@ -102,6 +102,7 @@ const STEP_REQUIRED = {
   2: ["tax_number", "company_name", "city", "company_workers"],
   3: [],
 };
+const FORM_REQUIRED = [...STEP_REQUIRED[1], ...STEP_REQUIRED[2]];
 
 const STRICT_NAV = true;
 
@@ -713,6 +714,15 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
       // without this, that handler independently double-posts the same submission
       if (data.website) return; // honeypot
       if (submittingRef.current) return; // drugi klik, gdy POST jeszcze w locie
+      const submitErrors = FORM_REQUIRED.reduce((result, field) => {
+        const error = validateField(field, data[field]);
+        if (error) result[field] = error;
+        return result;
+      }, {});
+      if (Object.keys(submitErrors).length) {
+        setErrors((current) => ({ ...current, ...submitErrors }));
+        return;
+      }
       submittingRef.current = true;
       setFailed(false);
       log("submit", data);
@@ -771,13 +781,17 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
     [data, agreemrkChecked],
   );
 
-  const requiredForNav = noTabs ? [...(STEP_REQUIRED[1] || []), ...(STEP_REQUIRED[2] || [])] : STEP_REQUIRED[step] || [];
+  const requiredForNav = noTabs ? FORM_REQUIRED : STEP_REQUIRED[step] || [];
   const canProceed = STRICT_NAV
     ? requiredForNav.every((f) => {
       const v = String(data[f] ?? "").trim();
       return v.length > 0 && validateField(f, v) === null;
     })
     : !requiredForNav.some((f) => errors[f]);
+  const canSubmit = FORM_REQUIRED.every((field) => {
+    const value = String(data[field] ?? "").trim();
+    return value.length > 0 && validateField(field, value) === null;
+  });
   const stepWidths = noTabs ? [] : [1, 2, 3].map((s) => calcStepProgress(s, step, data, agreemrkChecked, done, marketing));
 
   const backBtn =
@@ -844,10 +858,12 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
     (noTabs || step === 3) &&
     (ARROW_BTN
       ? html`
-          <button
-            type="submit"
+          <${canSubmit ? "button" : "div"}
+            key=${canSubmit ? "submit-active" : "submit-inactive"}
+            type=${canSubmit ? "submit" : undefined}
+            aria-hidden=${canSubmit ? undefined : "true"}
             class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" +
-            (!canProceed ? " is-inactive" : "")}
+            (!canSubmit ? " is-inactive" : "")}
           >
             <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
               <div data-button="padding" class="better-workplace--button_layout">
@@ -867,9 +883,18 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
                 </div>
               </div>
             </div>
-          </button>
+          </${canSubmit ? "button" : "div"}>
         `
-      : html`<button type="submit" class=${"button" + (!canProceed ? " is-inactive" : "")}>${COPY.buttons.submit}</button>`);
+      : html`
+          <${canSubmit ? "button" : "div"}
+            key=${canSubmit ? "submit-active" : "submit-inactive"}
+            type=${canSubmit ? "submit" : undefined}
+            aria-hidden=${canSubmit ? undefined : "true"}
+            class=${"button" + (!canSubmit ? " is-inactive" : "")}
+          >
+            ${COPY.buttons.submit}
+          </${canSubmit ? "button" : "div"}>
+        `);
 
   return html`
     <div class="padding-xl grid-1">
