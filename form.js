@@ -65,6 +65,7 @@ const COPY = {
     tax_number_invalid: "Podany NIP jest nieprawidłowy",
     tax_number_not_found: "Podany NIP nie istnieje",
     tax_number_fetch_error: "Błąd podczas pobierania danych NIP",
+    tax_number_lookup_required: "Kliknij „Pobierz dane”, aby uzupełnić dane firmy",
     company_name_required: "Nazwa firmy jest wymagana",
     city_required: "Miejscowość firmy jest wymagana",
     company_workers_required: "Wybierz liczbę pracowników",
@@ -226,6 +227,19 @@ function validateStep(step, data) {
     if (err) errors[field] = err;
   }
   return errors;
+}
+
+function validateSubmit(data, nipFilled) {
+  const fields = nipFilled ? FORM_REQUIRED : [...STEP_REQUIRED[1], "tax_number"];
+  const errors = {};
+  for (const field of fields) {
+    const error = validateField(field, data[field]);
+    if (error) errors[field] = error;
+  }
+  if (!nipFilled && !errors.tax_number) {
+    errors.tax_number = COPY.errors.tax_number_lookup_required;
+  }
+  return { fields, errors };
 }
 
 async function lookupNip(nip) {
@@ -706,6 +720,34 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
     }
   }, [data.tax_number]);
 
+  const showSubmitErrors = useCallback(() => {
+    const { fields, errors: submitErrors } = validateSubmit(data, nipFilled);
+    setErrors((current) => {
+      const next = { ...current };
+      for (const field of FORM_REQUIRED) next[field] = null;
+      return { ...next, ...submitErrors };
+    });
+
+    const firstInvalid = fields.find((field) => submitErrors[field]);
+    if (firstInvalid) {
+      requestAnimationFrame(() => {
+        const field = document.getElementById(firstInvalid);
+        field?.scrollIntoView({ behavior: "smooth", block: "center" });
+        field?.focus({ preventScroll: true });
+      });
+    }
+    return Object.keys(submitErrors).length === 0;
+  }, [data, nipFilled]);
+
+  const handleInactiveSubmitKeyDown = useCallback(
+    (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      showSubmitErrors();
+    },
+    [showSubmitErrors],
+  );
+
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
@@ -714,15 +756,7 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
       // without this, that handler independently double-posts the same submission
       if (data.website) return; // honeypot
       if (submittingRef.current) return; // drugi klik, gdy POST jeszcze w locie
-      const submitErrors = FORM_REQUIRED.reduce((result, field) => {
-        const error = validateField(field, data[field]);
-        if (error) result[field] = error;
-        return result;
-      }, {});
-      if (Object.keys(submitErrors).length) {
-        setErrors((current) => ({ ...current, ...submitErrors }));
-        return;
-      }
+      if (!showSubmitErrors()) return;
       submittingRef.current = true;
       setFailed(false);
       log("submit", data);
@@ -778,7 +812,7 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
         submittingRef.current = false;
       }
     },
-    [data, agreemrkChecked],
+    [data, agreemrkChecked, showSubmitErrors],
   );
 
   const requiredForNav = noTabs ? FORM_REQUIRED : STEP_REQUIRED[step] || [];
@@ -788,7 +822,7 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
       return v.length > 0 && validateField(f, v) === null;
     })
     : !requiredForNav.some((f) => errors[f]);
-  const canSubmit = FORM_REQUIRED.every((field) => {
+  const canSubmit = nipFilled && FORM_REQUIRED.every((field) => {
     const value = String(data[field] ?? "").trim();
     return value.length > 0 && validateField(field, value) === null;
   });
@@ -861,7 +895,12 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
           <${canSubmit ? "button" : "div"}
             key=${canSubmit ? "submit-active" : "submit-inactive"}
             type=${canSubmit ? "submit" : undefined}
-            aria-hidden=${canSubmit ? undefined : "true"}
+            role=${canSubmit ? undefined : "button"}
+            tabindex=${canSubmit ? undefined : "0"}
+            aria-disabled=${canSubmit ? undefined : "true"}
+            onClick=${canSubmit ? undefined : showSubmitErrors}
+            onKeyDown=${canSubmit ? undefined : handleInactiveSubmitKeyDown}
+            style=${canSubmit ? undefined : { pointerEvents: "auto" }}
             class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" +
             (!canSubmit ? " is-inactive" : "")}
           >
@@ -889,7 +928,12 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
           <${canSubmit ? "button" : "div"}
             key=${canSubmit ? "submit-active" : "submit-inactive"}
             type=${canSubmit ? "submit" : undefined}
-            aria-hidden=${canSubmit ? undefined : "true"}
+            role=${canSubmit ? undefined : "button"}
+            tabindex=${canSubmit ? undefined : "0"}
+            aria-disabled=${canSubmit ? undefined : "true"}
+            onClick=${canSubmit ? undefined : showSubmitErrors}
+            onKeyDown=${canSubmit ? undefined : handleInactiveSubmitKeyDown}
+            style=${canSubmit ? undefined : { pointerEvents: "auto" }}
             class=${"button" + (!canSubmit ? " is-inactive" : "")}
           >
             ${COPY.buttons.submit}
