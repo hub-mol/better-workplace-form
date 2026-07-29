@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pl-PL">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Zgłoszenie na konferencję | BetterWorkplace</title>
+
+    <link rel="preconnect" crossorigin href="https://cdn.prod.website-files.com" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.prod.website-files.com/698dfabcdd705500e5451b80/css/better-workplace-corposite.webflow.shared.aa2dc6e3e.min.css"
+      integrity="sha384-qi3G4+XfbaCa+GD7aLmLMbijRrB6a4CBj86jq034Dh0e2S51RO/unlEgtjsw66Xp"
+      crossorigin="anonymous"
+    />
+
+    <style>
+      .form-nav {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+      }
+      .form-helper {
+        display: none;
+      }
+      .form_input {
+        clip-path: polygon(
+          0 0,
+          0 100%,
+          100% 100%,
+          100% 0,
+          calc(var(--cutout-width) + 1.5rem) 0,
+          calc(var(--cutout-width) + 1.5rem) 0.75rem,
+          1.5rem 0.75rem,
+          1.5rem 0,
+          0 0
+        );
+      }
+    </style>
+  </head>
+  <body>
+    <svg xmlns="http://www.w3.org/2000/svg" style="display: none" aria-hidden="true">
+      <symbol id="error" viewBox="0 0 32 32">
+        <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2" fill="none" />
+        <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M16 10v8M16 22h.5" />
+      </symbol>
+      <symbol id="info" viewBox="0 0 32 32">
+        <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="2" fill="none" />
+        <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M16 22v-8M16 10h.5" />
+      </symbol>
+      <symbol id="mail" viewBox="0 0 32 32">
+        <rect x="4" y="7" width="24" height="18" rx="2" stroke="currentColor" stroke-width="2" fill="none" />
+        <path d="m5 9 11 8 11-8" stroke="currentColor" stroke-width="2" fill="none" />
+      </symbol>
+    </svg>
+
+    <div id="app"></div>
+
+    <script type="module" src="../conference-form.js"></script>
+  </body>
+</html>

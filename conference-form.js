@@ -1,11 +1,13 @@
 import { initForm as initCoreForm, destroyForm } from "./form-core.js";
 
-export const FORM_SETUP = {
+export const CONFERENCE_FORM_SETUP = {
+  noTabs: true,
+  marketing: true,
   formName: "zapytanie",
-  formType: "zapytanie",
+  formType: "rejestracja-bmhr",
   buttons: {
-    submit: "Chcę otrzymać ofertę!",
-    shortsubmit: "Zapytaj o ofertę",
+    submit: "Wyślij zgłoszenie",
+    shortsubmit: "Wyślij",
   },
   sections: [
     {
@@ -41,20 +43,6 @@ export const FORM_SETUP = {
               label: "Email służbowy",
               placeholder: "np. jan.kowalski@firma.pl",
               autocomplete: "email",
-              required: true,
-            },
-          ],
-        },
-        {
-          fields: [
-            {
-              name: "phone",
-              type: "tel",
-              label: "Telefon",
-              placeholder: "111 222 333",
-              autocomplete: "tel",
-              minLength: 9,
-              maxLength: 16,
               required: true,
             },
           ],
@@ -140,21 +128,24 @@ export const FORM_SETUP = {
       ],
     },
     {
-      id: "question",
-      heading: "Zadaj pytanie",
+      id: "conference",
+      heading: "Wybierz konferencję",
       consent: true,
       rows: [
         {
           fields: [
             {
-              name: "f_message",
-              type: "textarea",
-              label: "Wiadomość (opcjonalnie)",
-              placeholder: "Np. interesują nas owoce i kawa dla 50 osób w biurze w Warszawie.",
-              maxLength: 5000,
-              rows: 7,
-              required: false,
-              noIcon: true,
+              name: "conference",
+              type: "select",
+              label: "Termin i lokalizacja",
+              placeholder: "Wybierz termin",
+              required: true,
+              options: [
+                { value: "2026-10-05-wroclaw", label: "05.10 Wrocław" },
+                { value: "2026-10-06-katowice", label: "06.10 Katowice" },
+                { value: "2026-10-12-poznan", label: "12.10 Poznań" },
+                { value: "2026-10-13-warszawa", label: "13.10 Warszawa" },
+              ],
             },
           ],
         },
@@ -164,7 +155,7 @@ export const FORM_SETUP = {
 };
 
 export function initForm() {
-  return initCoreForm(FORM_SETUP);
+  return initCoreForm(CONFERENCE_FORM_SETUP);
 }
 
 export { destroyForm };

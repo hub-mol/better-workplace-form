@@ -5,9 +5,12 @@ Multi-step form built with Preact. Designed to run inside an `<iframe>` and comm
 ## Files
 
 ```
-form.js           — full form logic (Preact, validation, tax number lookup, Webflow submit)
+form-core.js      — shared Preact components, validation, NIP lookup and Webflow submit
+form.js           — standard contact-form setup
+conference-form.js — conference registration setup
 examples/
-  embed.html      — standalone HTML for local dev
+  embed.html            — standard stepped form for local dev
+  embed-conference.html — conference form without steps
 ```
 
 ## Adding to Webflow
@@ -33,6 +36,195 @@ There is a single mount (`<div id="app">`); the variant is configured with data 
 | `data-form-debug`             | Enables `[bwp]` console logging.                                                         |
 
 Query params on the form's own URL (`?company=…`, `?marketing=1`) still work as per-embed overrides and win over the attributes.
+
+### Conference registration setup
+
+The conference variant is configured separately in `conference-form.js` and uses the shared `form-core.js`.
+
+```html
+<div id="app"></div>
+<script type="module" src="./conference-form.js"></script>
+```
+
+It renders one page with:
+
+- **Dane kontaktowe** — first name, last name and business email;
+- **Dane firmy** — the existing NIP/GUS company flow;
+- **Wybierz konferencję** — required **Termin i lokalizacja** dropdown;
+- marketing opt-in;
+- **Wyślij zgłoszenie** submit button (**Wyślij** on mobile).
+
+All sections, rows, fields, labels, placeholders and select options live in `CONFERENCE_FORM_SETUP`. Validation rules and error messages stay in `form-core.js`.
+
+#### Webflow Code Embed
+
+For Webflow, the setup can live directly in a Code Embed while the shared core is loaded from a fixed commit:
+
+```html
+<div id="app"></div>
+
+<script type="module">
+  import { initForm } from "https://rawcdn.githack.com/hub-mol/better-workplace-form/COMMIT_SHA/form-core.js";
+
+  const CONFERENCE_FORM_SETUP = {
+    noTabs: true,
+    marketing: true,
+    formName: "zapytanie",
+    formType: "rejestracja-bmhr",
+    buttons: {
+      submit: "Wyślij zgłoszenie",
+      shortsubmit: "Wyślij",
+    },
+    sections: [
+      {
+        id: "contact",
+        heading: "Dane kontaktowe",
+        rows: [
+          {
+            layout: "grid-2",
+            fields: [
+              {
+                name: "first_name",
+                type: "text",
+                label: "Imię",
+                placeholder: "np. Jan",
+                autocomplete: "given-name",
+                required: true,
+              },
+              {
+                name: "last_name",
+                type: "text",
+                label: "Nazwisko",
+                placeholder: "np. Kowalski",
+                autocomplete: "family-name",
+                required: true,
+              },
+            ],
+          },
+          {
+            fields: [
+              {
+                name: "email",
+                type: "email",
+                label: "Email służbowy",
+                placeholder: "np. jan.kowalski@firma.pl",
+                autocomplete: "email",
+                required: true,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "company",
+        heading: "Dane firmy",
+        lookup: {
+          field: "tax_number",
+          reveal: ["company_name", "city", "company_workers", "department"],
+        },
+        rows: [
+          {
+            layout: "grid-2",
+            fields: [
+              {
+                name: "tax_number",
+                type: "text",
+                label: "NIP",
+                placeholder: "np. 6793077034",
+                minLength: 10,
+                maxLength: 13,
+                required: true,
+              },
+            ],
+          },
+          {
+            layout: "grid-2-1",
+            fields: [
+              {
+                name: "company_name",
+                type: "text",
+                label: "Nazwa firmy",
+                placeholder: "np. Polnex",
+                autocomplete: "organization",
+                required: true,
+              },
+              {
+                name: "city",
+                type: "text",
+                label: "Miejscowość",
+                placeholder: "np. Warszawa",
+                required: true,
+              },
+            ],
+          },
+          {
+            layout: "grid-1-2",
+            fields: [
+              {
+                name: "company_workers",
+                type: "select",
+                label: "Liczba pracowników",
+                placeholder: "Wybierz",
+                required: true,
+                options: [
+                  { value: "10-100", label: "10-100" },
+                  { value: "100-200", label: "100-200" },
+                  { value: "200-500", label: "200-500" },
+                  { value: "500-1000", label: "500-1000" },
+                  { value: "1000-2000", label: "1000-2000" },
+                  { value: "2000+", label: "2000+" },
+                ],
+              },
+              {
+                name: "department",
+                type: "select",
+                label: "Reprezentowany dział (opcjonalnie)",
+                placeholder: "Wybierz dział",
+                required: false,
+                options: [
+                  { value: "HR", label: "HR" },
+                  { value: "Office", label: "Office" },
+                  { value: "Zaopatrzenie", label: "Zaopatrzenie" },
+                  { value: "Facility", label: "Facility" },
+                  { value: "Inny", label: "Inny" },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "conference",
+        heading: "Wybierz konferencję",
+        consent: true,
+        rows: [
+          {
+            fields: [
+              {
+                name: "conference",
+                type: "select",
+                label: "Termin i lokalizacja",
+                placeholder: "Wybierz termin",
+                required: true,
+                options: [
+                  { value: "2026-10-05-wroclaw", label: "05.10 Wrocław" },
+                  { value: "2026-10-06-katowice", label: "06.10 Katowice" },
+                  { value: "2026-10-12-poznan", label: "12.10 Poznań" },
+                  { value: "2026-10-13-warszawa", label: "13.10 Warszawa" },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  initForm(CONFERENCE_FORM_SETUP);
+</script>
+```
+
+Replace `COMMIT_SHA` after committing and pushing the branch. There must be only one element with `id="app"` on the page.
 
 Migration from the old mount ids:
 
