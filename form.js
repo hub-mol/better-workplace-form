@@ -7,6 +7,12 @@ export const FORM_SETUP = {
     submit: "Chcę otrzymać ofertę!",
     shortsubmit: "Zapytaj o ofertę",
   },
+  success: {
+    heading: "Dziękujemy!",
+    subheading: "Twoje zapytanie zostało wysłane.",
+    description:
+      "Nasz konsultant skontaktuje się z Tobą w ciągu 24h (dni robocze), aby omówić szczegóły dostępnej oferty.",
+  },
   sections: [
     {
       id: "contact",

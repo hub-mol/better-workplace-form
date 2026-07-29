@@ -22,6 +22,8 @@ The SVG sprite and styles are already on the Webflow page — you only need to a
 <script type="module" src="https://cdn.jsdelivr.net/gh/hub-mol/better-workplace-form@1.0/form.js"></script>
 ```
 
+A custom setup can switch between a stepped and a single-page form with `tabs: true` or `tabs: false`. When `tabs` is omitted, `data-form-steps="true"` enables the stepped layout.
+
 ### Form variants (attributes on `#app`)
 
 There is a single mount (`<div id="app">`); the variant is configured with data attributes:
@@ -55,6 +57,7 @@ It renders one page with:
 - **Wyślij zgłoszenie** submit button (**Wyślij** on mobile).
 
 All sections, rows, fields, labels, placeholders and select options live in `CONFERENCE_FORM_SETUP`. Validation rules and error messages stay in `form-core.js`.
+The post-submit copy is configured with `success.heading`, `success.subheading` and `success.description`.
 
 #### Webflow Code Embed
 
@@ -67,13 +70,19 @@ For Webflow, the setup can live directly in a Code Embed while the shared core i
   import { initForm } from "https://rawcdn.githack.com/hub-mol/better-workplace-form/COMMIT_SHA/form-core.js";
 
   const CONFERENCE_FORM_SETUP = {
-    noTabs: true,
+    tabs: false,
     marketing: true,
     formName: "zapytanie",
     formType: "rejestracja-bmhr",
     buttons: {
       submit: "Wyślij zgłoszenie",
       shortsubmit: "Wyślij",
+    },
+    success: {
+      heading: "Dziękujemy!",
+      subheading: "Twoje zapytanie zostało wysłane.",
+      description:
+        "Nasz konsultant skontaktuje się z Tobą w ciągu 24h (dni robocze), aby omówić szczegóły dostępnej oferty.",
     },
     sections: [
       {

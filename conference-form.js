@@ -1,13 +1,19 @@
 import { initForm as initCoreForm, destroyForm } from "./form-core.js";
 
 export const CONFERENCE_FORM_SETUP = {
-  noTabs: true,
+  tabs: false,
   marketing: true,
   formName: "zapytanie",
   formType: "rejestracja-bmhr",
   buttons: {
     submit: "Wyślij zgłoszenie",
     shortsubmit: "Wyślij",
+  },
+  success: {
+    heading: "Dziękujemy!",
+    subheading: "Twoje zapytanie zostało wysłane.",
+    description:
+      "Nasz konsultant skontaktuje się z Tobą w ciągu 24h (dni robocze), aby omówić szczegóły dostępnej oferty.",
   },
   sections: [
     {

@@ -505,7 +505,7 @@ function scrollToForm() {
   }
 }
 
-function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAttr = false, brandAttr = "", setup = {} }) {
+function App({ tabs = false, labelAbove = false, companyAttr = "", marketingAttr = false, brandAttr = "", setup = {} }) {
   const sections = setup.sections || [];
   const formFields = sections.flatMap((section) => section.rows.flatMap((row) => row.fields));
   const requiredFields = formFields.filter((field) => field.required);
@@ -515,6 +515,13 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
   const formName = setup.formName || "zapytanie";
   const formType = setup.formType || formName;
   const buttons = { ...COPY.buttons, ...setup.buttons };
+  const success = {
+    heading: "Dziękujemy!",
+    subheading: "Twoje zapytanie zostało wysłane.",
+    description:
+      "Nasz konsultant skontaktuje się z Tobą w ciągu 24h (dni robocze), aby omówić szczegóły dostępnej oferty.",
+    ...setup.success,
+  };
   const [step, setStep] = useState(1);
   const [data, setData] = useState(() => ({
     ...Object.fromEntries(formFields.map((field) => [field.name, field.defaultValue ?? ""])),
@@ -612,7 +619,7 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
     };
     apply();
     document.fonts?.ready.then(apply); // re-measure once the Webflow web font loads (shifts label width)
-  }, [step, nipFilled, noTabs]);
+  }, [step, nipFilled, tabs]);
 
   const onChange = useCallback((field, value) => {
     let v = value;
@@ -739,7 +746,7 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
 
         if (res.ok) {
           setDone(true);
-          if (noTabs) window.scrollTo({ top: 0, behavior: "smooth" });
+          if (!tabs) window.scrollTo({ top: 0, behavior: "smooth" });
           window.dataLayer = window.dataLayer || [];
           window.dataLayer.push({ event: "form_success", formID: formName, url: data.url, brand: data.brand });
           log("submit success");
@@ -758,10 +765,10 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
   );
 
   const currentSection = sections[step - 1];
-  const requiredForNav = noTabs
+  const requiredForNav = !tabs
     ? requiredFields
     : currentSection.rows.flatMap((row) => row.fields).filter((field) => field.required);
-  const currentLookup = noTabs ? lookup : currentSection.lookup;
+  const currentLookup = !tabs ? lookup : currentSection.lookup;
   const canProceed = STRICT_NAV
     ? (!currentLookup || nipFilled) &&
     requiredForNav.every((field) => {
@@ -773,12 +780,12 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
     const value = String(data[field.name] ?? "").trim();
     return value.length > 0 && validateField(field, value) === null;
   });
-  const stepWidths = noTabs
-    ? []
-    : sections.map((section, index) => calcStepProgress(index + 1, step, section, data, done));
+  const stepWidths = tabs
+    ? sections.map((section, index) => calcStepProgress(index + 1, step, section, data, done))
+    : [];
 
   const backBtn =
-    !noTabs &&
+    tabs &&
     step > 1 &&
     (ARROW_BTN
       ? html`
@@ -806,7 +813,7 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
       : html` <button type="button" class="button is-secondary" onClick=${goBack}>${COPY.buttons.back}</button> `);
 
   const nextBtn =
-    !noTabs &&
+    tabs &&
     step < sections.length &&
     (ARROW_BTN
       ? html`
@@ -838,7 +845,7 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
         `);
 
   const submitBtn =
-    (noTabs || step === sections.length) &&
+    (!tabs || step === sections.length) &&
     (ARROW_BTN
       ? html`
           <${canSubmit ? "button" : "div"}
@@ -892,7 +899,7 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
   return html`
     <div class="padding-xl grid-1">
       <div id="form-component" class="form_component w-form">
-        ${!noTabs && html`<${StepIndicator} widths=${stepWidths} />`}
+        ${tabs && html`<${StepIndicator} widths=${stepWidths} />`}
 
         <form
           id=${formName}
@@ -904,7 +911,7 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
           style=${{ display: done ? "none" : "" }}
           onSubmit=${handleSubmit}
         >
-          ${(noTabs ? sections : [currentSection]).map(
+          ${(!tabs ? sections : [currentSection]).map(
             (section) => html`
               <${FormSection}
                 key=${section.id}
@@ -925,7 +932,7 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
             `,
           )}
 
-          ${!noTabs &&
+          ${tabs &&
           html`
             <div style="display:none">
               ${formFields
@@ -935,7 +942,7 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
           `}
 
           <div class="form-nav">
-            ${noTabs
+            ${!tabs
               ? submitBtn
               : html`
                   <div class="form-nav_left">${backBtn}</div>
@@ -974,10 +981,8 @@ function App({ noTabs = false, labelAbove = false, companyAttr = "", marketingAt
               class="better-workplace--form_message_img"
             />
             <div class="better-workplace--form_message_text flex-col gap-xs">
-              <p class="heading-style-h5 text-color-card-heading">Dziękujemy!<br />Twoje zapytanie zostało wysłane.</p>
-              <p class="better-workplace--text-size-md">
-                Nasz konsultant skontaktuje się z Tobą w ciągu 24h (dni robocze), aby omówić szczegóły dostępnej oferty.
-              </p>
+              <p class="heading-style-h5 text-color-card-heading">${success.heading}<br />${success.subheading}</p>
+              <p class="better-workplace--text-size-md">${success.description}</p>
             </div>
           </div>
         </div>
@@ -1025,7 +1030,7 @@ export function initForm(setup = {}) {
   if (!el) return;
   if ("formDebug" in el.dataset) DEBUG = true;
   mount(el, {
-    noTabs: setup.noTabs ?? el.dataset.formSteps !== "true",
+    tabs: setup.tabs ?? el.dataset.formSteps === "true",
     labelAbove: "formLabelAbove" in el.dataset,
     companyAttr: el.dataset.formCompanyName || "",
     marketingAttr: setup.marketing ?? "formMarketing" in el.dataset,
