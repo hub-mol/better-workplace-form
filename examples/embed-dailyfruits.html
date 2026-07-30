@@ -121,12 +121,6 @@
                 border-left-color: #8dc63f;
                 color: #1b5e3a;
             }
-            /* fallback dla prostego przycisku (ARROW_BTN = false) */
-            #app button.button {
-                background-color: #8dc63f;
-                color: #1b5e3a;
-                border-radius: 999px;
-            }
         </style>
     </head>
     <body>
@@ -152,14 +146,8 @@
             </symbol>
         </svg>
 
-        <div
-            id="app"
-            data-form-label-above
-            data-form-company-name="Dailyfruits Sp. z o.o."
-            data-form-marketing
-            data-form-brand="Dailyfruits"
-        ></div>
+        <div id="app"></div>
 
-        <script type="module" src="../form.js"></script>
+        <script type="module" src="../dailyfruits-form.js"></script>
     </body>
 </html>

@@ -1,7 +1,34 @@
 import { initForm as initCoreForm, destroyForm } from "./form-core.js";
+import { createContactSection, COMPANY_SECTION, CONSENTS_SECTION } from "./shared-sections.js";
+
+const CONFERENCE_SECTION = {
+  id: "conference",
+  heading: "Wybierz konferencję",
+  rows: [
+    {
+      fields: [
+        {
+          name: "conference",
+          type: "select",
+          label: "Termin i lokalizacja",
+          required: true,
+          options: [
+            { value: "2026-10-05-wroclaw", label: "05.10 Wrocław" },
+            { value: "2026-10-06-katowice", label: "06.10 Katowice" },
+            { value: "2026-10-12-poznan", label: "12.10 Poznań" },
+            { value: "2026-10-13-warszawa", label: "13.10 Warszawa" },
+          ],
+        },
+      ],
+    },
+  ],
+};
 
 export const CONFERENCE_FORM_SETUP = {
-  tabs: false,
+  tabs: true,
+  labelAbove: false,
+  debug: false,
+  brand: "BetterMinds",
   marketing: true,
   formName: "zapytanie",
   formType: "rejestracja-bmhr",
@@ -9,155 +36,20 @@ export const CONFERENCE_FORM_SETUP = {
     submit: "Wyślij zgłoszenie",
     shortsubmit: "Wyślij",
   },
+  legal: {
+    companyName: "Betterworkplace Sp. z o.o.",
+    privacyUrl: "https://www.betterworkplace.pl/privacy-policy",
+  },
+  error: {
+    email: "biuro@betterworkplace.pl",
+  },
   success: {
     heading: "Dziękujemy!",
     subheading: "Twoje zapytanie zostało wysłane.",
     description:
       "Nasz konsultant skontaktuje się z Tobą w ciągu 24h (dni robocze), aby omówić szczegóły dostępnej oferty.",
   },
-  sections: [
-    {
-      id: "contact",
-      heading: "Dane kontaktowe",
-      rows: [
-        {
-          layout: "grid-2",
-          fields: [
-            {
-              name: "first_name",
-              type: "text",
-              label: "Imię",
-              placeholder: "np. Jan",
-              autocomplete: "given-name",
-              required: true,
-            },
-            {
-              name: "last_name",
-              type: "text",
-              label: "Nazwisko",
-              placeholder: "np. Kowalski",
-              autocomplete: "family-name",
-              required: true,
-            },
-          ],
-        },
-        {
-          fields: [
-            {
-              name: "email",
-              type: "email",
-              label: "Email służbowy",
-              placeholder: "np. jan.kowalski@firma.pl",
-              autocomplete: "email",
-              required: true,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: "company",
-      heading: "Dane firmy",
-      lookup: {
-        field: "tax_number",
-        reveal: ["company_name", "city", "company_workers", "department"],
-      },
-      rows: [
-        {
-          layout: "grid-2",
-          fields: [
-            {
-              name: "tax_number",
-              type: "text",
-              label: "NIP",
-              placeholder: "np. 6793077034",
-              minLength: 10,
-              maxLength: 13,
-              required: true,
-            },
-          ],
-        },
-        {
-          layout: "grid-2-1",
-          fields: [
-            {
-              name: "company_name",
-              type: "text",
-              label: "Nazwa firmy",
-              placeholder: "np. Polnex",
-              autocomplete: "organization",
-              required: true,
-            },
-            {
-              name: "city",
-              type: "text",
-              label: "Miejscowość",
-              placeholder: "np. Warszawa",
-              required: true,
-            },
-          ],
-        },
-        {
-          layout: "grid-1-2",
-          fields: [
-            {
-              name: "company_workers",
-              type: "select",
-              label: "Liczba pracowników",
-              placeholder: "Wybierz",
-              required: true,
-              options: [
-                { value: "10-100", label: "10-100" },
-                { value: "100-200", label: "100-200" },
-                { value: "200-500", label: "200-500" },
-                { value: "500-1000", label: "500-1000" },
-                { value: "1000-2000", label: "1000-2000" },
-                { value: "2000+", label: "2000+" },
-              ],
-            },
-            {
-              name: "department",
-              type: "select",
-              label: "Reprezentowany dział (opcjonalnie)",
-              placeholder: "Wybierz dział",
-              required: false,
-              options: [
-                { value: "HR", label: "HR" },
-                { value: "Office", label: "Office" },
-                { value: "Zaopatrzenie", label: "Zaopatrzenie" },
-                { value: "Facility", label: "Facility" },
-                { value: "Inny", label: "Inny" },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: "conference",
-      heading: "Wybierz konferencję",
-      consent: true,
-      rows: [
-        {
-          fields: [
-            {
-              name: "conference",
-              type: "select",
-              label: "Termin i lokalizacja",
-              placeholder: "Wybierz termin",
-              required: true,
-              options: [
-                { value: "2026-10-05-wroclaw", label: "05.10 Wrocław" },
-                { value: "2026-10-06-katowice", label: "06.10 Katowice" },
-                { value: "2026-10-12-poznan", label: "12.10 Poznań" },
-                { value: "2026-10-13-warszawa", label: "13.10 Warszawa" },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ],
+  sections: [createContactSection({ includePhone: false }), CONFERENCE_SECTION, COMPANY_SECTION, CONSENTS_SECTION],
 };
 
 export function initForm() {

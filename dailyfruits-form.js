@@ -1,18 +1,12 @@
 import { initForm as initCoreForm, destroyForm } from "./form-core.js";
 import { CONTACT_SECTION, COMPANY_SECTION, QUESTION_SECTION } from "./shared-sections.js";
 
-const params = new URLSearchParams(window.location.search);
-const flag = (name, fallback) => {
-  const value = params.get(name);
-  return value === null ? fallback : !["0", "false", "no"].includes(value.toLowerCase());
-};
-
-export const FORM_SETUP = {
-  tabs: flag("tabs", true),
-  labelAbove: flag("labelAbove", false),
-  debug: flag("debug", false),
-  brand: params.get("brand") || "",
-  marketing: flag("marketing", false),
+export const DAILYFRUITS_FORM_SETUP = {
+  tabs: false,
+  labelAbove: true,
+  debug: false,
+  brand: "Dailyfruits",
+  marketing: true,
   formName: "zapytanie",
   formType: "zapytanie",
   buttons: {
@@ -20,7 +14,7 @@ export const FORM_SETUP = {
     shortsubmit: "Zapytaj o ofertę",
   },
   legal: {
-    companyName: params.get("company") || "Betterworkplace Sp. z o.o.",
+    companyName: "Dailyfruits Sp. z o.o.",
     privacyUrl: "https://www.betterworkplace.pl/privacy-policy",
   },
   error: {
@@ -36,7 +30,7 @@ export const FORM_SETUP = {
 };
 
 export function initForm() {
-  return initCoreForm(FORM_SETUP);
+  return initCoreForm(DAILYFRUITS_FORM_SETUP);
 }
 
 export { destroyForm };

@@ -1,6 +1,6 @@
-import { html, render, useState, useEffect, useCallback, useRef } from "https://unpkg.com/htm/preact/standalone.module.js";
+import { html, render, useState, useEffect, useCallback, useRef } from "https://unpkg.com/htm@3.1.1/preact/standalone.module.js";
 
-let DEBUG = new URL(import.meta.url).searchParams.has("debug");
+let DEBUG = false;
 const log = (...args) => DEBUG && console.log("[bwp]", ...args);
 
 const PERSONAL_EMAIL_DOMAINS = [
@@ -17,6 +17,7 @@ const PERSONAL_EMAIL_DOMAINS = [
 ];
 
 const DEFAULT_COMPANY = "Betterworkplace Sp. z o.o.";
+const DEFAULT_ERROR_EMAIL = "biuro@betterworkplace.pl";
 
 const COPY = {
   errors: {
@@ -62,11 +63,21 @@ const COPY = {
   },
 };
 
+const FIELD_META = {
+  first_name: { placeholder: "np. Jan", autocomplete: "given-name" },
+  last_name: { placeholder: "np. Kowalski", autocomplete: "family-name" },
+  email: { placeholder: "np. jan.kowalski@firma.pl", autocomplete: "email" },
+  phone: { placeholder: "111 222 333", autocomplete: "tel" },
+  tax_number: { placeholder: "np. 6793077034" },
+  company_name: { placeholder: "np. Polnex", autocomplete: "organization" },
+  city: { placeholder: "np. Warszawa" },
+  company_workers: { placeholder: "Wybierz" },
+  department: { placeholder: "Wybierz dział" },
+  conference: { placeholder: "Wybierz termin" },
+  f_message: { placeholder: "Np. interesują nas owoce i kawa dla 50 osób w biurze w Warszawie." },
+};
+
 const WEBFLOW_SITE_ID = "698dfabcdd705500e5451b80";
-
-const STRICT_NAV = true;
-
-const ARROW_BTN = true;
 
 // fixed: true = group subscriber digits in 3s; false = just separate CC from number
 const PHONE_CODES = {
@@ -94,6 +105,32 @@ const PHONE_CODES = {
   "+420": { ccLen: 3, fixed: true }, // Czechy
   "+421": { ccLen: 3, fixed: true }, // Słowacja
 };
+
+function validateSetup(setup) {
+  const fail = (message) => {
+    throw new Error(`[bwp setup] ${message}`);
+  };
+  if (!Array.isArray(setup.sections) || !setup.sections.length) fail("sections must be a non-empty array");
+  const names = new Set();
+  for (const section of setup.sections) {
+    if (!section?.id || !Array.isArray(section.rows)) fail("every section needs id and rows");
+    for (const row of section.rows) {
+      if (!Array.isArray(row.fields)) fail(`section "${section.id}" has a row without fields`);
+      for (const field of row.fields) {
+        if (!field?.name || !field.type || !field.label) fail(`section "${section.id}" has an incomplete field`);
+        if (names.has(field.name)) fail(`duplicate field "${field.name}"`);
+        if (field.type === "select" && !Array.isArray(field.options)) fail(`select "${field.name}" needs options`);
+        names.add(field.name);
+      }
+    }
+  }
+  for (const section of setup.sections.filter((item) => item.lookup)) {
+    if (!names.has(section.lookup.field)) fail(`lookup field "${section.lookup.field}" does not exist`);
+    for (const name of section.lookup.reveal || []) {
+      if (!names.has(name)) fail(`lookup reveal field "${name}" does not exist`);
+    }
+  }
+}
 
 function detectCountryCode(stripped) {
   for (const len of [4, 3, 2]) {
@@ -148,7 +185,9 @@ function validateField(field, value) {
     if (!v) return field.required ? COPY.errors.email_required : null;
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return COPY.errors.email_invalid;
     const domain = v.split("@")[1].toLowerCase();
-    if (PERSONAL_EMAIL_DOMAINS.includes(domain)) return COPY.errors.email_personal;
+    if (field.validation === "business" && PERSONAL_EMAIL_DOMAINS.includes(domain)) {
+      return COPY.errors.email_personal;
+    }
     return null;
   }
   if (name === "phone") {
@@ -291,6 +330,7 @@ function Field({ id, label, required, error, noIcon, children }) {
 }
 
 function FormControl({ field, value, error, onChange, onBlur }) {
+  const meta = FIELD_META[field.name] || {};
   const className =
     "form_input" +
     (field.type === "select" ? " is-select w-select" : field.type === "textarea" ? " is-text-area w-input" : " w-input") +
@@ -299,7 +339,7 @@ function FormControl({ field, value, error, onChange, onBlur }) {
     id: field.name,
     name: field.name,
     value,
-    placeholder: field.placeholder,
+    placeholder: meta.placeholder || (field.type === "select" ? "Wybierz" : ""),
     class: className,
     onBlur: (event) => onBlur(field, event.target.value),
   };
@@ -311,7 +351,7 @@ function FormControl({ field, value, error, onChange, onBlur }) {
         style=${{ color: value ? "var(--better-workplace---strong--strong-100-primary)" : "" }}
         onChange=${(event) => onChange(field, event.target.value)}
       >
-        <option value="" disabled hidden>${field.placeholder}</option>
+        <option value="" disabled hidden>${common.placeholder}</option>
         ${field.options.map((option) => html`<option value=${option.value}>${option.label}</option>`)}
       </select>
     `;
@@ -332,7 +372,7 @@ function FormControl({ field, value, error, onChange, onBlur }) {
     <input
       ...${common}
       type=${field.type || "text"}
-      autocomplete=${field.autocomplete || "off"}
+      autocomplete=${meta.autocomplete || "off"}
       maxlength=${field.maxLength || 256}
       minlength=${field.minLength}
       onInput=${(event) => onChange(field, event.target.value)}
@@ -409,7 +449,7 @@ function NipCallout({ error, filled }) {
   `;
 }
 
-function Consent({ company, marketing, checked, onChange }) {
+function Consent({ company, privacyUrl, marketing, checked, onChange }) {
   return html`
     ${marketing &&
     html`
@@ -429,7 +469,7 @@ function Consent({ company, marketing, checked, onChange }) {
     `}
     <p class="form_checkbox-label text-size-xs">
       ${COPY.legal.privacy(company)}
-      <a href=${COPY.legal.privacy_link_url} class="text-style-link-sm">${COPY.legal.privacy_link_label}</a>.
+      <a href=${privacyUrl} class="text-style-link-sm">${COPY.legal.privacy_link_label}</a>.
     </p>
   `;
 }
@@ -445,6 +485,7 @@ function FormSection({
   nipError,
   nipFilled,
   company,
+  privacyUrl,
   marketing,
   agreemrkChecked,
   onMarketingChange,
@@ -452,7 +493,8 @@ function FormSection({
   const lookup = section.lookup;
   return html`
     <fieldset class="flex-col gap-xs form-step">
-      <div><legend class="heading-style-h5 text-color-card-heading">${section.heading}</legend></div>
+      ${section.heading &&
+      html`<div><legend class="heading-style-h5 text-color-card-heading">${section.heading}</legend></div>`}
       ${section.rows.map((row) => {
         const visibleFields = row.fields.filter((field) => !lookup || nipFilled || !lookup.reveal.includes(field.name));
         const hasLookup = lookup && row.fields.some((field) => field.name === lookup.field);
@@ -480,6 +522,7 @@ function FormSection({
       html`
         <${Consent}
           company=${company}
+          privacyUrl=${privacyUrl}
           marketing=${marketing}
           checked=${agreemrkChecked}
           onChange=${onMarketingChange}
@@ -505,7 +548,10 @@ function scrollToForm() {
   }
 }
 
-function App({ tabs = false, labelAbove = false, companyAttr = "", marketingAttr = false, brandAttr = "", setup = {} }) {
+function App({ setup = {} }) {
+  const tabs = setup.tabs === true;
+  const labelAbove = setup.labelAbove === true;
+  const setupBrand = setup.brand || "";
   const sections = setup.sections || [];
   const formFields = sections.flatMap((section) => section.rows.flatMap((row) => row.fields));
   const requiredFields = formFields.filter((field) => field.required);
@@ -515,6 +561,9 @@ function App({ tabs = false, labelAbove = false, companyAttr = "", marketingAttr
   const formName = setup.formName || "zapytanie";
   const formType = setup.formType || formName;
   const buttons = { ...COPY.buttons, ...setup.buttons };
+  const privacyUrl = setup.legal?.privacyUrl || COPY.legal.privacy_link_url;
+  const errorEmail = setup.error?.email || DEFAULT_ERROR_EMAIL;
+  const errorMailto = `mailto:${errorEmail}?subject=${encodeURIComponent("Błąd formularza")}`;
   const success = {
     heading: "Dziękujemy!",
     subheading: "Twoje zapytanie zostało wysłane.",
@@ -526,7 +575,7 @@ function App({ tabs = false, labelAbove = false, companyAttr = "", marketingAttr
   const [data, setData] = useState(() => ({
     ...Object.fromEntries(formFields.map((field) => [field.name, field.defaultValue ?? ""])),
     url: "",
-    brand: brandAttr,
+    brand: setupBrand,
     referrer: "",
     utm_source: "",
     utm_medium: "",
@@ -542,22 +591,14 @@ function App({ tabs = false, labelAbove = false, companyAttr = "", marketingAttr
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
   const submittingRef = useRef(false);
-  const [company, setCompany] = useState(companyAttr);
-  const [marketing, setMarketing] = useState(marketingAttr);
-
-  // company/marketing overrides come from this page's own URL — works the same
-  // whether we're standalone or the src= of an iframe (location is the iframe's own)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("company")) setCompany(params.get("company"));
-    if (params.has("marketing")) setMarketing(true);
-  }, []);
+  const company = setup.legal?.companyName || DEFAULT_COMPANY;
+  const marketing = setup.marketing === true;
 
   useEffect(() => {
     if (window === window.parent) {
       const href = window.location.href;
       const utm = extractUtm(href);
-      const brand = brandAttr || extractBrand(href);
+      const brand = setupBrand || extractBrand(href);
       log("standalone mode", { url: href, brand, ...utm });
       setData((prev) => ({ ...prev, url: href, brand, referrer: document.referrer, ...utm }));
       return;
@@ -569,7 +610,7 @@ function App({ tabs = false, labelAbove = false, companyAttr = "", marketingAttr
       setData((prev) => ({
         ...prev,
         ...(e.data.url ? { url: e.data.url } : {}),
-        ...(brandAttr ? {} : e.data.brand ? { brand: e.data.brand } : e.data.url ? { brand: extractBrand(e.data.url) } : {}),
+        ...(setupBrand ? {} : e.data.brand ? { brand: e.data.brand } : e.data.url ? { brand: extractBrand(e.data.url) } : {}),
         ...(e.data.referrer ? { referrer: e.data.referrer } : {}),
         ...utm,
       }));
@@ -602,7 +643,7 @@ function App({ tabs = false, labelAbove = false, companyAttr = "", marketingAttr
 
   // Measure each field label and expose its width (in em) on the paired input as
   // --cutout-width, so the input's clip-path can notch its border to fit the label.
-  // Skipped in label-above mode (data-form-label-above) — no notch to size there.
+  // Labels above inputs do not need a border cutout.
   useEffect(() => {
     if (labelAbove) return;
     const root = document.getElementById("app");
@@ -769,13 +810,12 @@ function App({ tabs = false, labelAbove = false, companyAttr = "", marketingAttr
     ? requiredFields
     : currentSection.rows.flatMap((row) => row.fields).filter((field) => field.required);
   const currentLookup = !tabs ? lookup : currentSection.lookup;
-  const canProceed = STRICT_NAV
-    ? (!currentLookup || nipFilled) &&
+  const canProceed =
+    (!currentLookup || nipFilled) &&
     requiredForNav.every((field) => {
       const value = String(data[field.name] ?? "").trim();
       return value.length > 0 && validateField(field, value) === null;
-    })
-    : !requiredForNav.some((field) => errors[field.name]);
+    });
   const canSubmit = (!lookup || nipFilled) && requiredFields.every((field) => {
     const value = String(data[field.name] ?? "").trim();
     return value.length > 0 && validateField(field, value) === null;
@@ -787,114 +827,92 @@ function App({ tabs = false, labelAbove = false, companyAttr = "", marketingAttr
   const backBtn =
     tabs &&
     step > 1 &&
-    (ARROW_BTN
-      ? html`
-          <button
-            type="button"
-            onClick=${goBack}
-            class="better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block"
-          >
-            <div class="better-workplace--button w-variant-e5b64a72-f673-3169-40ad-1f06b1232785">
-              <div class="better-workplace--button_layout">
-                <div class="better-workplace--button_relative">
-                  <svg
-                    data-wf--better-workplace--icon--variant="md"
-                    viewBox="0 0 24 24"
-                    class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
-                  >
-                    <use href="#arrow-left" viewBox="0 0 32 32"></use>
-                  </svg>
-                </div>
-                <div data-button="text" class="better-workplace--button_text">${COPY.buttons.back}</div>
-              </div>
+    html`
+      <button
+        type="button"
+        onClick=${goBack}
+        class="better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block"
+      >
+        <div class="better-workplace--button w-variant-e5b64a72-f673-3169-40ad-1f06b1232785">
+          <div class="better-workplace--button_layout">
+            <div class="better-workplace--button_relative">
+              <svg
+                data-wf--better-workplace--icon--variant="md"
+                viewBox="0 0 24 24"
+                class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
+              >
+                <use href="#arrow-left" viewBox="0 0 32 32"></use>
+              </svg>
             </div>
-          </button>
-        `
-      : html` <button type="button" class="button is-secondary" onClick=${goBack}>${COPY.buttons.back}</button> `);
+            <div data-button="text" class="better-workplace--button_text">${COPY.buttons.back}</div>
+          </div>
+        </div>
+      </button>
+    `;
 
   const nextBtn =
     tabs &&
     step < sections.length &&
-    (ARROW_BTN
-      ? html`
-          <button
-            type="button"
-            onClick=${goNext}
-            class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" +
-            (!canProceed ? " is-inactive" : "")}
-          >
-            <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
-              <div data-button="padding" class="better-workplace--button_layout">
-                <div class="better-workplace--button_text">${COPY.buttons.next}</div>
-                <div class="better-workplace--button_relative">
-                  <svg
-                    data-wf--better-workplace--icon--variant="md"
-                    viewBox="0 0 24 24"
-                    class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
-                  >
-                    <use href="#arrow-right" viewBox="0 0 32 32"></use>
-                  </svg>
-                  <div data-button="circle" class="better-workplace--button_icon-bg"></div>
-                </div>
-              </div>
+    html`
+      <button
+        type="button"
+        onClick=${goNext}
+        class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" +
+        (!canProceed ? " is-inactive" : "")}
+      >
+        <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
+          <div data-button="padding" class="better-workplace--button_layout">
+            <div class="better-workplace--button_text">${COPY.buttons.next}</div>
+            <div class="better-workplace--button_relative">
+              <svg
+                data-wf--better-workplace--icon--variant="md"
+                viewBox="0 0 24 24"
+                class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
+              >
+                <use href="#arrow-right" viewBox="0 0 32 32"></use>
+              </svg>
+              <div data-button="circle" class="better-workplace--button_icon-bg"></div>
             </div>
-          </button>
-        `
-      : html`
-          <button type="button" class=${"button" + (!canProceed ? " is-inactive" : "")} onClick=${goNext}>${COPY.buttons.next}</button>
-        `);
+          </div>
+        </div>
+      </button>
+    `;
 
   const submitBtn =
     (!tabs || step === sections.length) &&
-    (ARROW_BTN
-      ? html`
-          <${canSubmit ? "button" : "div"}
-            key=${canSubmit ? "submit-active" : "submit-inactive"}
-            type=${canSubmit ? "submit" : undefined}
-            role=${canSubmit ? undefined : "button"}
-            tabindex=${canSubmit ? undefined : "0"}
-            aria-disabled=${canSubmit ? undefined : "true"}
-            onClick=${canSubmit ? undefined : showSubmitErrors}
-            onKeyDown=${canSubmit ? undefined : handleInactiveSubmitKeyDown}
-            style=${canSubmit ? undefined : { pointerEvents: "auto" }}
-            class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" +
-            (!canSubmit ? " is-inactive" : "")}
-          >
-            <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
-              <div data-button="padding" class="better-workplace--button_layout">
-                <div class="better-workplace--button_text">
-                  <span class="hide-mobile-tiny">${buttons.submit}</span>
-                  <span class="show-mobile-tiny">${buttons.shortsubmit}</span>
-                </div>
-                <div class="better-workplace--button_relative">
-                  <svg
-                    data-wf--better-workplace--icon--variant="md"
-                    viewBox="0 0 24 24"
-                    class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
-                  >
-                    <use href="#mail" viewBox="0 0 32 32"></use>
-                  </svg>
-                  <div data-button="circle" class="better-workplace--button_icon-bg"></div>
-                </div>
-              </div>
+    html`
+      <${canSubmit ? "button" : "div"}
+        key=${canSubmit ? "submit-active" : "submit-inactive"}
+        type=${canSubmit ? "submit" : undefined}
+        role=${canSubmit ? undefined : "button"}
+        tabindex=${canSubmit ? undefined : "0"}
+        aria-disabled=${canSubmit ? undefined : "true"}
+        onClick=${canSubmit ? undefined : showSubmitErrors}
+        onKeyDown=${canSubmit ? undefined : handleInactiveSubmitKeyDown}
+        style=${canSubmit ? undefined : { pointerEvents: "auto" }}
+        class=${"better-workplace--button-component w-variant-8f17e49d-0f24-b779-ff5c-6a22df9ce1a0 w-inline-block" +
+        (!canSubmit ? " is-inactive" : "")}
+      >
+        <div data-wf--better-workplace--button-inside--variant="primary" class="better-workplace--button">
+          <div data-button="padding" class="better-workplace--button_layout">
+            <div class="better-workplace--button_text">
+              <span class="hide-mobile-tiny">${buttons.submit}</span>
+              <span class="show-mobile-tiny">${buttons.shortsubmit}</span>
             </div>
-          </${canSubmit ? "button" : "div"}>
-        `
-      : html`
-          <${canSubmit ? "button" : "div"}
-            key=${canSubmit ? "submit-active" : "submit-inactive"}
-            type=${canSubmit ? "submit" : undefined}
-            role=${canSubmit ? undefined : "button"}
-            tabindex=${canSubmit ? undefined : "0"}
-            aria-disabled=${canSubmit ? undefined : "true"}
-            onClick=${canSubmit ? undefined : showSubmitErrors}
-            onKeyDown=${canSubmit ? undefined : handleInactiveSubmitKeyDown}
-            style=${canSubmit ? undefined : { pointerEvents: "auto" }}
-            class=${"button" + (!canSubmit ? " is-inactive" : "")}
-          >
-            ${buttons.submit}
-          </${canSubmit ? "button" : "div"}>
-        `);
+            <div class="better-workplace--button_relative">
+              <svg
+                data-wf--better-workplace--icon--variant="md"
+                viewBox="0 0 24 24"
+                class="better-workplace--icon-svg w-variant-e9c02736-dc0b-1e38-719f-d7ef475aed6f"
+              >
+                <use href="#mail" viewBox="0 0 32 32"></use>
+              </svg>
+              <div data-button="circle" class="better-workplace--button_icon-bg"></div>
+            </div>
+          </div>
+        </div>
+      </${canSubmit ? "button" : "div"}>
+    `;
 
   return html`
     <div class="padding-xl grid-1">
@@ -925,6 +943,7 @@ function App({ tabs = false, labelAbove = false, companyAttr = "", marketingAttr
                 nipError=${nipError}
                 nipFilled=${nipFilled}
                 company=${company}
+                privacyUrl=${privacyUrl}
                 marketing=${marketing}
                 agreemrkChecked=${agreemrkChecked}
                 onMarketingChange=${setAgreemrkChecked}
@@ -1006,7 +1025,7 @@ function App({ tabs = false, labelAbove = false, companyAttr = "", marketingAttr
             <div class="better-workplace--info-callout-text">
               <p>
                 Nie udało się wysłać. Spróbuj ponownie lub napisz:${" "}
-                <a href="mailto:biuro@betterworkplace.pl?subject=B%C5%82%C4%85d%20formularza">biuro@betterworkplace.pl</a>
+                <a href=${errorMailto}>${errorEmail}</a>
               </p>
             </div>
           </div>
@@ -1016,9 +1035,7 @@ function App({ tabs = false, labelAbove = false, companyAttr = "", marketingAttr
   `;
 }
 
-// Na obcych stronach (embed) inne skrypty potrafią zmutować DOM w kontenerze,
-// a podwójne załadowanie modułu — zamontować drugą kopię. Zerujemy kontener
-// przed każdym renderem, żeby diff Preacta zawsze startował od czystego DOM.
+// Start from a clean mount after duplicate embeds or external DOM changes.
 function mount(el, props) {
   render(null, el);
   el.replaceChildren();
@@ -1028,15 +1045,9 @@ function mount(el, props) {
 export function initForm(setup = {}) {
   const el = document.getElementById("app");
   if (!el) return;
-  if ("formDebug" in el.dataset) DEBUG = true;
-  mount(el, {
-    tabs: setup.tabs ?? el.dataset.formSteps === "true",
-    labelAbove: "formLabelAbove" in el.dataset,
-    companyAttr: el.dataset.formCompanyName || "",
-    marketingAttr: setup.marketing ?? "formMarketing" in el.dataset,
-    brandAttr: el.dataset.formBrand || "",
-    setup,
-  });
+  validateSetup(setup);
+  DEBUG = setup.debug === true;
+  mount(el, { setup });
 }
 
 export function destroyForm() {
