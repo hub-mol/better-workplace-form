@@ -21,6 +21,7 @@ export function createContactSection({ includePhone = true } = {}) {
         ],
       },
       {
+        ...(includePhone ? { layout: "grid-2-1" } : {}),
         fields: [
           {
             name: "email",
@@ -29,12 +30,8 @@ export function createContactSection({ includePhone = true } = {}) {
             validation: "business",
             required: true,
           },
-        ],
-      },
-      ...(includePhone
-        ? [
-            {
-              fields: [
+          ...(includePhone
+            ? [
                 {
                   name: "phone",
                   type: "tel",
@@ -43,10 +40,10 @@ export function createContactSection({ includePhone = true } = {}) {
                   maxLength: 16,
                   required: true,
                 },
-              ],
-            },
-          ]
-        : []),
+              ]
+            : []),
+        ],
+      },
     ],
   };
 }
