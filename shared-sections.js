@@ -1,54 +1,46 @@
-export function createContactSection({ includePhone = true } = {}) {
-  return {
-    id: "contact",
-    heading: "Dane kontaktowe",
-    rows: [
-      {
-        layout: "grid-2",
-        fields: [
-          {
-            name: "first_name",
-            type: "text",
-            label: "Imię",
-            required: true,
-          },
-          {
-            name: "last_name",
-            type: "text",
-            label: "Nazwisko",
-            required: true,
-          },
-        ],
-      },
-      {
-        ...(includePhone ? { layout: "grid-2-1" } : {}),
-        fields: [
-          {
-            name: "email",
-            type: "email",
-            label: "Email służbowy",
-            validation: "business",
-            required: true,
-          },
-          ...(includePhone
-            ? [
-                {
-                  name: "phone",
-                  type: "tel",
-                  label: "Telefon",
-                  minLength: 9,
-                  maxLength: 16,
-                  required: true,
-                },
-              ]
-            : []),
-        ],
-      },
-    ],
-  };
-}
+const CONTACT_NAMES_ROW = {
+  layout: "grid-2",
+  fields: [
+    { name: "first_name", type: "text", label: "Imię", required: true },
+    { name: "last_name", type: "text", label: "Nazwisko", required: true },
+  ],
+};
 
-export const CONTACT_SECTION = createContactSection();
+const EMAIL_FIELD = {
+  name: "email",
+  type: "email",
+  label: "Email służbowy",
+  validation: "business",
+  required: true,
+};
+
+export const CONTACT_SECTION = {
+  id: "contact",
+  heading: "Dane kontaktowe",
+  rows: [CONTACT_NAMES_ROW, { fields: [EMAIL_FIELD] }],
+};
+
+export const CONTACT_PHONE_SECTION = {
+  id: "contact",
+  heading: "Dane kontaktowe",
+  rows: [
+    CONTACT_NAMES_ROW,
+    {
+      layout: "grid-2-1",
+      fields: [
+        EMAIL_FIELD,
+        {
+          name: "phone",
+          type: "tel",
+          label: "Telefon",
+          minLength: 9,
+          maxLength: 16,
+          required: true,
+        },
+      ],
+    },
+  ],
+};
 
 export const COMPANY_SECTION = {
   id: "company",

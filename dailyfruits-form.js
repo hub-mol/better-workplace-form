@@ -1,5 +1,5 @@
 import { initForm as initCoreForm, destroyForm } from "./form-core.js";
-import { CONTACT_SECTION, COMPANY_SECTION, QUESTION_SECTION } from "./shared-sections.js";
+import { CONTACT_PHONE_SECTION, COMPANY_SECTION, QUESTION_SECTION } from "./shared-sections.js";
 
 export const DAILYFRUITS_FORM_SETUP = {
   tabs: false,
@@ -26,7 +26,7 @@ export const DAILYFRUITS_FORM_SETUP = {
     description:
       "Nasz konsultant skontaktuje się z Tobą w ciągu 24h (dni robocze), aby omówić szczegóły dostępnej oferty.",
   },
-  sections: [CONTACT_SECTION, COMPANY_SECTION, QUESTION_SECTION],
+  sections: [CONTACT_PHONE_SECTION, COMPANY_SECTION, QUESTION_SECTION],
 };
 
 export function initForm() {

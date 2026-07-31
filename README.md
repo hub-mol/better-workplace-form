@@ -64,7 +64,7 @@ Parametry interpretuje wyłącznie `form.js`; `form-core.js` nie czyta konfigura
 
 ```js
 import { initForm } from "./form-core.js";
-import { CONTACT_SECTION, COMPANY_SECTION, QUESTION_SECTION } from "./shared-sections.js";
+import { CONTACT_PHONE_SECTION, COMPANY_SECTION, QUESTION_SECTION } from "./shared-sections.js";
 
 const SETUP = {
   tabs: true,
@@ -90,7 +90,7 @@ const SETUP = {
     subheading: "Twoje zapytanie zostało wysłane.",
     description: "Nasz konsultant skontaktuje się z Tobą w ciągu 24h (dni robocze).",
   },
-  sections: [CONTACT_SECTION, COMPANY_SECTION, QUESTION_SECTION],
+  sections: [CONTACT_PHONE_SECTION, COMPANY_SECTION, QUESTION_SECTION],
 };
 
 initForm(SETUP);
