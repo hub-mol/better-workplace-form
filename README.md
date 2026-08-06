@@ -139,6 +139,21 @@ Bez `product_id` (albo gdy żaden element CMS nie pasuje) zostaje widok domyśln
 | `data-action="form-zestaw-delete"` | usunięcie zestawu |
 | `input[name="personalizacja"]` | checkbox „Chcę zmienić skład” wewnątrz elementu CMS |
 
+Po stronie produktu link do formularza buduje `initZestawLinks()` — ta sama para parametrów, którą czyta `initPrezentyZestaw()`, więc kontrakt URL jest w jednym pliku:
+
+```js
+import { initZestawLinks } from "./prezenty-zestaw.js";
+
+initZestawLinks(); // domyślnie document; można podać kontener Barby
+```
+
+| Atrybut | Rola |
+| --- | --- |
+| `data-zapytanie-card="card"` | karta zestawu; nosi `data-zapytanie-product` i `data-zapytanie-product-id` |
+| `data-zapytanie-card="button"` | wrapper linku do formularza — każdy `a` w środku dostaje parametry |
+
+Funkcja jest idempotentna i obsługuje wiele kart naraz, więc nadaje się i na stronę zestawu, i na listing.
+
 Pola w wysyłce: `prezenty_zestaw_id`, `prezenty_zestaw_nazwa`, `prezenty_zestaw_personalizacja` (`true` albo pusto). Po usunięciu zestawu wszystkie trzy są puste.
 
 `initPrezentyZestaw()` jest idempotentne — samo woła `destroyPrezentyZestaw()` i odpina stare listenery, więc przy nawigacji Barbą wystarczy wywołać je ponownie w hooku wejścia. `destroyPrezentyZestaw()` przydaje się osobno tylko przy wyjściu ze strony bez wejścia na kolejny formularz.

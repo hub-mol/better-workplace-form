@@ -115,6 +115,24 @@ export function destroyPrezentyZestaw() {
   Object.assign(state, { id: "", name: "", removed: false, changes: false });
 }
 
+// ─── Linki na stronie zestawu ────────────────────────────────────────
+// Druga strona tego samego kontraktu: strona produktu dokleja zestaw do linku,
+// initPrezentyZestaw() odczytuje go na formularzu. Idempotentne (set nadpisuje),
+// więc przy nawigacji Barbą wystarczy wywołać ponownie.
+export function initZestawLinks(root = document) {
+  root.querySelectorAll('[data-zapytanie-card="card"]').forEach((card) => {
+    const id = card.dataset.zapytanieProductId?.trim();
+    const name = card.dataset.zapytanieProduct?.trim();
+    if (!id) return;
+    card.querySelectorAll('[data-zapytanie-card="button"] a').forEach((link) => {
+      const url = new URL(link.href, window.location.href);
+      if (name) url.searchParams.set("product", name);
+      url.searchParams.set("product_id", id);
+      link.href = url.toString();
+    });
+  });
+}
+
 // Czytane dopiero przy wysyłce, więc widzą aktualny stan po usunięciu/przywróceniu
 export function getZestawFields() {
   const visible = Boolean(state.id) && !state.removed;
