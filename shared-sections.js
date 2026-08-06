@@ -118,7 +118,6 @@ export const COMPANY_SECTION = {
 export const QUESTION_SECTION = {
   id: "question",
   heading: "Zadaj pytanie",
-  consent: true,
   rows: [
     {
       fields: [
@@ -134,10 +133,4 @@ export const QUESTION_SECTION = {
       ],
     },
   ],
-};
-
-export const CONSENTS_SECTION = {
-  id: "consents",
-  consent: true,
-  rows: [],
 };

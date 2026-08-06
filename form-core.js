@@ -484,11 +484,6 @@ function FormSection({
   nipLoading,
   nipError,
   nipFilled,
-  company,
-  privacyUrl,
-  marketing,
-  agreemrkChecked,
-  onMarketingChange,
 }) {
   const lookup = section.lookup;
   return html`
@@ -518,16 +513,6 @@ function FormSection({
           ${hasLookup && html`<${NipCallout} error=${nipError} filled=${nipFilled} />`}
         `;
       })}
-      ${section.consent &&
-      html`
-        <${Consent}
-          company=${company}
-          privacyUrl=${privacyUrl}
-          marketing=${marketing}
-          checked=${agreemrkChecked}
-          onChange=${onMarketingChange}
-        />
-      `}
     </fieldset>
   `;
 }
@@ -563,6 +548,8 @@ function App({ setup = {} }) {
   const buttons = { ...COPY.buttons, ...setup.buttons };
   const privacyUrl = setup.legal?.privacyUrl || COPY.legal.privacy_link_url;
   const errorEmail = setup.error?.email || DEFAULT_ERROR_EMAIL;
+  // dodatkowe pola spoza sekcji; funkcja pozwala oddać stan modułu z chwili wysyłki
+  const extraFields = () => (typeof setup.extraFields === "function" ? setup.extraFields() : setup.extraFields || {});
   const errorMailto = `mailto:${errorEmail}?subject=${encodeURIComponent("Błąd formularza")}`;
   const success = {
     heading: "Dziękujemy!",
@@ -770,6 +757,7 @@ function App({ setup = {} }) {
             test: false,
             fields: {
               ...Object.fromEntries(formFields.map((field) => [field.name, data[field.name]])),
+              ...extraFields(),
               agreemrk: agreemrkChecked ? "on" : false,
               referrer: data.referrer,
               utm_source: data.utm_source,
@@ -942,11 +930,6 @@ function App({ setup = {} }) {
                 nipLoading=${nipLoading}
                 nipError=${nipError}
                 nipFilled=${nipFilled}
-                company=${company}
-                privacyUrl=${privacyUrl}
-                marketing=${marketing}
-                agreemrkChecked=${agreemrkChecked}
-                onMarketingChange=${setAgreemrkChecked}
               />
             `,
           )}
@@ -957,6 +940,19 @@ function App({ setup = {} }) {
               ${formFields
                 .filter((field) => !currentSection.rows.some((row) => row.fields.includes(field)))
                 .map((field) => html`<input type="hidden" name=${field.name} value=${data[field.name]} />`)}
+            </div>
+          `}
+
+          ${(!tabs || step === sections.length) &&
+          html`
+            <div class="flex-col gap-xs form-consents">
+              <${Consent}
+                company=${company}
+                privacyUrl=${privacyUrl}
+                marketing=${marketing}
+                checked=${agreemrkChecked}
+                onChange=${setAgreemrkChecked}
+              />
             </div>
           `}
 

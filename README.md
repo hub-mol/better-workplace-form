@@ -10,6 +10,7 @@ shared-sections.js    — wspólne sekcje: kontakt, firma, pytanie i zgody
 form.js               — domyślny formularz sterowany parametrami URL
 conference-form.js    — formularz konferencji
 dailyfruits-form.js   — formularz Dailyfruits
+prezenty-zestaw.js    — zestaw prezentowy z URL, sterowanie widokiem poza formularzem
 examples/             — lokalne strony testowe
 ```
 
@@ -99,6 +100,48 @@ initForm(SETUP);
 Przy starcie core sprawdza minimalną strukturę sekcji i pól. Błąd setupu zatrzymuje formularz z komunikatem `[bwp setup]` w konsoli.
 
 Placeholdery i `autocomplete` są dobierane w core na podstawie nazwy pola. Dla emaila `validation: "business"` dodatkowo blokuje prywatne domeny; usunięcie tej właściwości pozostawia tylko sprawdzenie wymagalności i formatu adresu.
+
+Tekst prawny jest renderowany automatycznie raz, na końcu formularza nad przyciskiem. `marketing: true` dodaje nad nim checkbox marketingowy. Nazwę spółki i link polityki prywatności ustawia się w `legal`.
+
+`extraFields` dokłada do wysyłki wartości spoza sekcji. Obiekt jest stały, funkcja jest wywoływana dopiero przy wysyłce — dzięki temu moduł spoza formularza może oddać swój aktualny stan.
+
+## Zestaw prezentowy
+
+`prezenty-zestaw.js` obsługuje wejście na formularz z konkretnym zestawem:
+
+```text
+/kontakt/zapytanie?product=Śnieżna+Rozkosz&product_id=342340943
+```
+
+Nagłówki, karta CMS i alerty leżą w Webflow poza `#app`, więc moduł steruje nimi bezpośrednio — Preact nie może być właścicielem tego DOM-u. Formularz dostaje z modułu tylko trzy wartości.
+
+```js
+import { initForm } from "./form-core.js";
+import { CONTACT_PHONE_SECTION, COMPANY_SECTION } from "./shared-sections.js";
+import { initPrezentyZestaw, getZestawFields } from "./prezenty-zestaw.js";
+
+initPrezentyZestaw();
+initForm({ marketing: true, sections: [CONTACT_PHONE_SECTION, COMPANY_SECTION], extraFields: getZestawFields });
+```
+
+Bez `product_id` (albo gdy żaden element CMS nie pasuje) zostaje widok domyślny. Cała lista CMS jest ładowana przez Webflow, moduł zostawia widoczny tylko pasujący element. Widoczność jest sterowana wyłącznie atrybutem `hidden`.
+
+| Atrybut | Rola |
+| --- | --- |
+| `data-form-zestaw="heading-default"` | nagłówek bez zestawu |
+| `data-form-zestaw="heading-zestaw"` | nagłówek z zestawem |
+| `data-form-zestaw="name"` | nazwa zestawu z URL (może być kilka) |
+| `data-form-zestaw="wrapper"` | całość sekcji zestawu |
+| `data-form-zestaw="cms-wrapper"` | lista CMS, chowana po usunięciu |
+| `data-form-zestaw="delete-alert"` | komunikat o usunięciu; `em` = nazwa, `a` = przywróć |
+| `data-form-zestaw="changes-alert"` | komunikat o zmianie składu |
+| `data-zapytanie-product="ID"` | element CMS, dopasowywany do `product_id` |
+| `data-action="form-zestaw-delete"` | usunięcie zestawu |
+| `input[name="personalizacja"]` | checkbox „Chcę zmienić skład” wewnątrz elementu CMS |
+
+Pola w wysyłce: `prezenty_zestaw_id`, `prezenty_zestaw_nazwa`, `prezenty_zestaw_personalizacja` (`true` albo pusto). Po usunięciu zestawu wszystkie trzy są puste.
+
+`initPrezentyZestaw()` jest idempotentne — samo woła `destroyPrezentyZestaw()` i odpina stare listenery, więc przy nawigacji Barbą wystarczy wywołać je ponownie w hooku wejścia. `destroyPrezentyZestaw()` przydaje się osobno tylko przy wyjściu ze strony bez wejścia na kolejny formularz.
 
 ## `iframe`
 

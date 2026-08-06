@@ -1,5 +1,5 @@
 import { initForm as initCoreForm, destroyForm } from "./form-core.js";
-import { CONTACT_SECTION, COMPANY_SECTION, CONSENTS_SECTION } from "./shared-sections.js";
+import { CONTACT_SECTION, COMPANY_SECTION } from "./shared-sections.js";
 
 const CONFERENCE_SECTION = {
   id: "conference",
@@ -49,7 +49,7 @@ export const CONFERENCE_FORM_SETUP = {
     description:
       "Nasz konsultant skontaktuje się z Tobą w ciągu 24h (dni robocze), aby omówić szczegóły dostępnej oferty.",
   },
-  sections: [CONTACT_SECTION, CONFERENCE_SECTION, COMPANY_SECTION, CONSENTS_SECTION],
+  sections: [CONTACT_SECTION, CONFERENCE_SECTION, COMPANY_SECTION],
 };
 
 export function initForm() {
