@@ -86,13 +86,19 @@ export function initPrezentyZestaw() {
     { signal },
   );
 
-  // checkbox bywa odtworzony przez przeglądarkę po powrocie na stronę — czytamy jego stan
+  // checkbox bywa odtworzony przez przeglądarkę po powrocie na stronę — czytamy jego stan.
+  // Zaznaczenie rysuje Webflow klasą w--redirected-checked na ikonie, nie na samym inpucie
   const personalizacja = card.querySelector('input[name="personalizacja"]');
-  state.changes = personalizacja?.checked === true;
+  const personalizacjaIcon = personalizacja?.closest("label")?.querySelector(".w-checkbox-input");
+  const setChanges = (checked) => {
+    state.changes = checked;
+    personalizacjaIcon?.classList.toggle("w--redirected-checked", checked);
+  };
+  setChanges(personalizacja?.checked === true);
   personalizacja?.addEventListener(
     "change",
     (event) => {
-      state.changes = event.target.checked;
+      setChanges(event.target.checked);
       apply();
     },
     { signal },
