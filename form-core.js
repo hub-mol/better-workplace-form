@@ -3,6 +3,31 @@ import { html, render, useState, useEffect, useCallback, useRef } from "https://
 let DEBUG = false;
 const log = (...args) => DEBUG && console.log("[bwp]", ...args);
 
+function getParentOrigin() {
+  if (!document.referrer) return "*";
+  try {
+    return new URL(document.referrer).origin;
+  } catch {
+    return "*";
+  }
+}
+
+function postToParent(message) {
+  window.parent.postMessage(message, getParentOrigin());
+}
+
+export function emitFormSuccess({ formID, url, brand }) {
+  const eventData = { event: "form_success", formID, url, brand };
+
+  if (window === window.parent) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push(eventData);
+    return;
+  }
+
+  postToParent({ type: "bwp:form-success", payload: eventData });
+}
+
 const PERSONAL_EMAIL_DOMAINS = [
   "gmail.com",
   "wp.pl",
@@ -590,7 +615,10 @@ function App({ setup = {} }) {
       setData((prev) => ({ ...prev, url: href, brand, referrer: document.referrer, ...utm }));
       return;
     }
+    const parentOrigin = getParentOrigin();
     const handler = (e) => {
+      if (e.source !== window.parent) return;
+      if (parentOrigin !== "*" && e.origin !== parentOrigin) return;
       if (e.data?.type !== "bwp:info") return;
       log("postMessage received", e.data);
       const utm = e.data.url ? extractUtm(e.data.url) : {};
@@ -603,7 +631,7 @@ function App({ setup = {} }) {
       }));
     };
     window.addEventListener("message", handler);
-    window.parent.postMessage({ type: "bwp:request-info" }, "*");
+    postToParent({ type: "bwp:request-info" });
     return () => window.removeEventListener("message", handler);
   }, []);
 
@@ -616,7 +644,7 @@ function App({ setup = {} }) {
     if (typeof ResizeObserver === "undefined" || window === window.parent) return;
     const target = document.getElementById("app") ?? document.documentElement;
     const obs = new ResizeObserver(() => {
-      window.parent.postMessage({ type: "bwp:resize", height: formHeight() }, "*");
+      postToParent({ type: "bwp:resize", height: formHeight() });
     });
     obs.observe(target);
     return () => obs.disconnect();
@@ -625,7 +653,7 @@ function App({ setup = {} }) {
   // NIP lookup reveals/hides company fields — resize once that settles
   useEffect(() => {
     if (window === window.parent) return;
-    window.parent.postMessage({ type: "bwp:resize", height: formHeight() }, "*");
+    postToParent({ type: "bwp:resize", height: formHeight() });
   }, [nipFilled, nipError]);
 
   // Measure each field label and expose its width (in em) on the paired input as
@@ -776,8 +804,7 @@ function App({ setup = {} }) {
         if (res.ok) {
           setDone(true);
           if (!tabs) window.scrollTo({ top: 0, behavior: "smooth" });
-          window.dataLayer = window.dataLayer || [];
-          window.dataLayer.push({ event: "form_success", formID: formName, url: data.url, brand: data.brand });
+          emitFormSuccess({ formID: formName, url: data.url, brand: data.brand });
           log("submit success");
         } else {
           setFailed(true);
