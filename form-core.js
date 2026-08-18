@@ -562,6 +562,7 @@ function App({ setup = {} }) {
   const tabs = setup.tabs === true;
   const labelAbove = setup.labelAbove === true;
   const setupBrand = setup.brand || "";
+  const setupCompany = setup.legal?.companyName || DEFAULT_COMPANY;
   const sections = setup.sections || [];
   const formFields = sections.flatMap((section) => section.rows.flatMap((row) => row.fields));
   const requiredFields = formFields.filter((field) => field.required);
@@ -600,10 +601,10 @@ function App({ setup = {} }) {
   const [nipError, setNipError] = useState("");
   const [nipFilled, setNipFilled] = useState(false);
   const [agreemrkChecked, setAgreemrkChecked] = useState(false);
+  const [company, setCompany] = useState(setupCompany);
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
   const submittingRef = useRef(false);
-  const company = setup.legal?.companyName || DEFAULT_COMPANY;
   const marketing = setup.marketing === true;
 
   useEffect(() => {
@@ -622,6 +623,9 @@ function App({ setup = {} }) {
       if (e.data?.type !== "bwp:info") return;
       log("postMessage received", e.data);
       const utm = e.data.url ? extractUtm(e.data.url) : {};
+      if (typeof e.data.companyName === "string" && e.data.companyName.trim()) {
+        setCompany(e.data.companyName.trim());
+      }
       setData((prev) => ({
         ...prev,
         ...(e.data.url ? { url: e.data.url } : {}),
