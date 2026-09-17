@@ -3,6 +3,31 @@ import { html, render, useState, useEffect, useCallback, useRef } from "https://
 let DEBUG = false;
 const log = (...args) => DEBUG && console.log("[bwp]", ...args);
 
+function getParentOrigin() {
+  if (!document.referrer) return "*";
+  try {
+    return new URL(document.referrer).origin;
+  } catch {
+    return "*";
+  }
+}
+
+function postToParent(message) {
+  window.parent.postMessage(message, getParentOrigin());
+}
+
+export function emitFormSuccess({ formID, url, brand }) {
+  const eventData = { event: "form_success", formID, url, brand };
+
+  if (window === window.parent) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push(eventData);
+    return;
+  }
+
+  postToParent({ type: "bwp:form-success", payload: eventData });
+}
+
 const PERSONAL_EMAIL_DOMAINS = [
   "gmail.com",
   "wp.pl",
@@ -68,7 +93,7 @@ const FIELD_META = {
   last_name: { placeholder: "np. Kowalski", autocomplete: "family-name" },
   email: { placeholder: "np. jan.kowalski@firma.pl", autocomplete: "email" },
   phone: { placeholder: "111 222 333", autocomplete: "tel" },
-  tax_number: { placeholder: "np. 6793077034" },
+  tax_number: { placeholder: "np. 6793077034", inputmode: "numeric" },
   company_name: { placeholder: "np. Polnex", autocomplete: "organization" },
   city: { placeholder: "np. Warszawa" },
   company_workers: { placeholder: "Wybierz" },
@@ -322,7 +347,12 @@ function Field({ id, label, required, error, noIcon, children }) {
           </svg>
         </div>
       `}
-      <span aria-live="polite" class="form_validation-error-text" style=${{ visibility: error ? "visible" : "hidden" }}>
+      <span
+        id=${`${id}-error`}
+        aria-live="polite"
+        class="form_validation-error-text"
+        style=${{ visibility: error ? "visible" : "hidden" }}
+      >
         ${error || ""}
       </span>
     </div>
@@ -341,6 +371,10 @@ function FormControl({ field, value, error, onChange, onBlur }) {
     value,
     placeholder: meta.placeholder || (field.type === "select" ? "Wybierz" : ""),
     class: className,
+    // gwiazdka przy labelu jest aria-hidden, więc wymagalność i błąd niosą tylko te atrybuty
+    "aria-required": field.required ? "true" : undefined,
+    "aria-invalid": error ? "true" : undefined,
+    "aria-describedby": error ? `${field.name}-error` : undefined,
     onBlur: (event) => onBlur(field, event.target.value),
   };
 
@@ -373,6 +407,7 @@ function FormControl({ field, value, error, onChange, onBlur }) {
       ...${common}
       type=${field.type || "text"}
       autocomplete=${meta.autocomplete || "off"}
+      inputmode=${meta.inputmode}
       maxlength=${field.maxLength || 256}
       minlength=${field.minLength}
       onInput=${(event) => onChange(field, event.target.value)}
@@ -537,6 +572,7 @@ function App({ setup = {} }) {
   const tabs = setup.tabs === true;
   const labelAbove = setup.labelAbove === true;
   const setupBrand = setup.brand || "";
+  const setupCompany = setup.legal?.companyName || DEFAULT_COMPANY;
   const sections = setup.sections || [];
   const formFields = sections.flatMap((section) => section.rows.flatMap((row) => row.fields));
   const requiredFields = formFields.filter((field) => field.required);
@@ -575,10 +611,10 @@ function App({ setup = {} }) {
   const [nipError, setNipError] = useState("");
   const [nipFilled, setNipFilled] = useState(false);
   const [agreemrkChecked, setAgreemrkChecked] = useState(false);
+  const [company, setCompany] = useState(setupCompany);
   const [done, setDone] = useState(false);
   const [failed, setFailed] = useState(false);
   const submittingRef = useRef(false);
-  const company = setup.legal?.companyName || DEFAULT_COMPANY;
   const marketing = setup.marketing === true;
 
   useEffect(() => {
@@ -590,10 +626,16 @@ function App({ setup = {} }) {
       setData((prev) => ({ ...prev, url: href, brand, referrer: document.referrer, ...utm }));
       return;
     }
+    const parentOrigin = getParentOrigin();
     const handler = (e) => {
+      if (e.source !== window.parent) return;
+      if (parentOrigin !== "*" && e.origin !== parentOrigin) return;
       if (e.data?.type !== "bwp:info") return;
       log("postMessage received", e.data);
       const utm = e.data.url ? extractUtm(e.data.url) : {};
+      if (typeof e.data.companyName === "string" && e.data.companyName.trim()) {
+        setCompany(e.data.companyName.trim());
+      }
       setData((prev) => ({
         ...prev,
         ...(e.data.url ? { url: e.data.url } : {}),
@@ -603,7 +645,7 @@ function App({ setup = {} }) {
       }));
     };
     window.addEventListener("message", handler);
-    window.parent.postMessage({ type: "bwp:request-info" }, "*");
+    postToParent({ type: "bwp:request-info" });
     return () => window.removeEventListener("message", handler);
   }, []);
 
@@ -616,7 +658,7 @@ function App({ setup = {} }) {
     if (typeof ResizeObserver === "undefined" || window === window.parent) return;
     const target = document.getElementById("app") ?? document.documentElement;
     const obs = new ResizeObserver(() => {
-      window.parent.postMessage({ type: "bwp:resize", height: formHeight() }, "*");
+      postToParent({ type: "bwp:resize", height: formHeight() });
     });
     obs.observe(target);
     return () => obs.disconnect();
@@ -625,7 +667,7 @@ function App({ setup = {} }) {
   // NIP lookup reveals/hides company fields — resize once that settles
   useEffect(() => {
     if (window === window.parent) return;
-    window.parent.postMessage({ type: "bwp:resize", height: formHeight() }, "*");
+    postToParent({ type: "bwp:resize", height: formHeight() });
   }, [nipFilled, nipError]);
 
   // Measure each field label and expose its width (in em) on the paired input as
@@ -776,8 +818,7 @@ function App({ setup = {} }) {
         if (res.ok) {
           setDone(true);
           if (!tabs) window.scrollTo({ top: 0, behavior: "smooth" });
-          window.dataLayer = window.dataLayer || [];
-          window.dataLayer.push({ event: "form_success", formID: formName, url: data.url, brand: data.brand });
+          emitFormSuccess({ formID: formName, url: data.url, brand: data.brand });
           log("submit success");
         } else {
           setFailed(true);
